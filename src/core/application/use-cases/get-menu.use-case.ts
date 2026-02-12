@@ -23,6 +23,7 @@ export class GetMenuUseCase {
       return {
         id: cat.nombre.toLowerCase().replace(/ /g, "-"), // Generamos un slug simple
         label: cat.nombre,
+        translations: cat.translations,
         items: catProducts.map((p) => ({
           id: p.id,
           name: p.titulo,
@@ -31,6 +32,12 @@ export class GetMenuUseCase {
           category: cat.nombre.toLowerCase().replace(/ /g, "-"),
           image: p.fotoUrl || undefined,
           highlight: p.esEspecial,
+          translations: p.translations ? {
+            en: p.translations.en ? { name: p.translations.en.titulo, description: p.translations.en.descripcion || undefined } : undefined,
+            fr: p.translations.fr ? { name: p.translations.fr.titulo, description: p.translations.fr.descripcion || undefined } : undefined,
+            it: p.translations.it ? { name: p.translations.it.titulo, description: p.translations.it.descripcion || undefined } : undefined,
+            de: p.translations.de ? { name: p.translations.de.titulo, description: p.translations.de.descripcion || undefined } : undefined,
+          } : undefined,
         })),
       };
     });

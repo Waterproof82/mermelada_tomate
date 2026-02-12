@@ -19,6 +19,12 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
       empresaId: row.empresa_id,
       nombre: row.nombre_es, // Por ahora devolvemos ES por defecto
       orden: row.orden || 0,
+      translations: {
+        en: row.nombre_en,
+        fr: row.nombre_fr,
+        it: row.nombre_it,
+        de: row.nombre_de,
+      },
     }));
   }
 }

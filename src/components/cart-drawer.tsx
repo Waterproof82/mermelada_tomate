@@ -45,7 +45,9 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 {items.map((ci) => (
                   <div key={ci.item.id} className="flex items-center gap-3 rounded-lg bg-card p-3">
                     <div className="flex-1">
-                      <p className="font-semibold text-card-foreground">{ci.item.name}</p>
+                      <p className="font-semibold text-card-foreground">
+                        {(language !== "es" && ci.item.translations?.[language]?.name) || ci.item.name}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {ci.item.price.toFixed(2).replace(".", ",")}{"€"}
                       </p>
@@ -76,7 +78,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                         size="icon"
                         className="size-7 text-destructive hover:text-destructive"
                         onClick={() => removeItem(ci.item.id)}
-                        aria-label={`${t("remove", language)} ${ci.item.name}`}
+                        aria-label={`${t("remove", language)} ${(language !== "es" && ci.item.translations?.[language]?.name) || ci.item.name}`}
                       >
                         <Trash2 className="size-3" />
                       </Button>

@@ -37,7 +37,7 @@ export function MenuSection({ category }: MenuSectionProps) {
     <section id={category.id} className="scroll-mt-32">
       <div className="mb-6 flex items-center gap-4">
         <h2 className="font-serif text-2xl font-bold text-foreground md:text-3xl">
-          {category.label}
+          {(language !== "es" && category.translations?.[language]) || category.label}
         </h2>
         <div className="h-px flex-1 bg-border" />
       </div>
@@ -116,7 +116,7 @@ function MenuItemCard({
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-2 flex items-start justify-between gap-2">
           <h3 className="font-serif text-xl font-bold text-foreground">
-            {item.name}
+            {(language !== "es" && item.translations?.[language]?.name) || item.name}
           </h3>
           <div className="flex flex-col gap-1 items-end shrink-0">
             {item.highlight && (
@@ -130,9 +130,9 @@ function MenuItemCard({
 
 
 
-        {item.description && (
+        {(item.description || item.translations?.[language]?.description) && (
           <p className="mb-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-            {item.description}
+            {(language !== "es" && item.translations?.[language]?.description) || item.description}
           </p>
         )}
 

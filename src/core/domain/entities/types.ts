@@ -23,6 +23,12 @@ export interface Category {
   empresaId: string;
   nombre: string;
   orden: number;
+  translations?: {
+    en?: string;
+    fr?: string;
+    it?: string;
+    de?: string;
+  };
 }
 
 export interface Tenant {

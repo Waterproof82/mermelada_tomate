@@ -76,7 +76,7 @@ export function QuantitySelectorDialog({
         <DialogHeader>
           <DialogTitle>{t("selectQuantity", language)}</DialogTitle>
           <DialogDescription>
-            {t("quantityFor", language)} {item.name}
+            {t("quantityFor", language)} {(language !== "es" && item.translations?.[language]?.name) || item.name}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
