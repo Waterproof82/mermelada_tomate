@@ -8,7 +8,7 @@ import { LanguageSelector } from "@/components/language-selector"
 import { useLanguage } from "@/lib/language-context"
 import { t } from "@/lib/translations"
 import { useEffect, useState } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "../lib/supabaseClient"
 
 interface SiteHeaderProps {
   readonly onCartOpen: () => void
@@ -20,9 +20,6 @@ export function SiteHeader({ onCartOpen }: SiteHeaderProps) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    const supabase = createClient(supabaseUrl, supabaseKey)
     const fetchLogo = async () => {
       const { data, error } = await supabase
         .from("empresas")

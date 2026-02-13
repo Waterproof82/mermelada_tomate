@@ -3,15 +3,12 @@
 import { useLanguage } from "@/lib/language-context"
 import { t } from "@/lib/translations"
 import { useEffect, useState } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "../lib/supabaseClient"
 
 export function SiteFooter() {
   const { language } = useLanguage()
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   useEffect(() => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    const supabase = createClient(supabaseUrl, supabaseKey)
     const fetchLogo = async () => {
       const { data, error } = await supabase
         .from("empresas")
