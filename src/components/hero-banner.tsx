@@ -1,8 +1,28 @@
 "use client"
 
+
 import { motion } from "framer-motion"
+import { useEffect, useState } from "react"
+import { createClient } from "@supabase/supabase-js"
 
 export function HeroBanner() {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  useEffect(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const fetchLogo = async () => {
+      const { data, error } = await supabase
+        .from("empresas")
+        .select("logo_url")
+        .limit(1)
+        .single()
+      if (!error && data && data.logo_url) {
+        setLogoUrl(data.logo_url)
+      }
+    }
+    fetchLogo()
+  }, [])
   return (
     <div className="relative flex flex-col items-center justify-center overflow-hidden bg-primary px-4 py-16 text-center md:py-24">
       <div className="absolute inset-0 opacity-10">
@@ -17,11 +37,13 @@ export function HeroBanner() {
         transition={{ duration: 0.6 }}
         className="relative z-10"
       >
-        <img
-          src="MERMELADA-TOMATE-web-transp-sombra-1920w.webp"
-          alt="Mermelada de Tomate"
-          className="mx-auto mb-6 h-24 w-auto md:h-32"
-        />
+        {logoUrl && (
+          <img
+            src={logoUrl}
+            alt="Mermelada de Tomate"
+            className="mx-auto mb-6 h-24 w-auto md:h-32"
+          />
+        )}
       </motion.div>
 
       <motion.div

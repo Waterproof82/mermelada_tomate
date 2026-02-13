@@ -1,11 +1,14 @@
 "use client"
 
+
 import { ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/lib/cart-context"
 import { LanguageSelector } from "@/components/language-selector"
 import { useLanguage } from "@/lib/language-context"
 import { t } from "@/lib/translations"
+import { useEffect, useState } from "react"
+import { createClient } from "@supabase/supabase-js"
 
 interface SiteHeaderProps {
   onCartOpen: () => void
@@ -14,16 +17,36 @@ interface SiteHeaderProps {
 export function SiteHeader({ onCartOpen }: SiteHeaderProps) {
   const { totalItems } = useCart()
   const { language } = useLanguage()
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const fetchLogo = async () => {
+      const { data, error } = await supabase
+        .from("empresas")
+        .select("logo_url")
+        .limit(1)
+        .single()
+      if (!error && data && data.logo_url) {
+        setLogoUrl(data.logo_url)
+      }
+    }
+    fetchLogo()
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:h-20 md:px-6">
         <a href="/" className="flex items-center gap-2">
-          <img
-            src="/images/mermelada-tomate-web-transp-sombra-1920w.webp"
-            alt="Mermelada de Tomate"
-            className="h-12 w-auto md:h-16"
-          />
+          {logoUrl && (
+            <img
+              src={logoUrl}
+              alt="Mermelada de Tomate"
+              className="h-12 w-auto md:h-16"
+            />
+          )}
         </a>
 
         <div className="flex items-center gap-1">
