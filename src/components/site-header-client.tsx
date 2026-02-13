@@ -13,7 +13,20 @@ interface SiteHeaderClientProps {
 }
 
 export function SiteHeaderClient({ showCart }: SiteHeaderClientProps) {
-  const { openCart } = useCart();
+  const { openCart, totalItems } = useCart();
+  const [animate, setAnimate] = useState(false);
+
+  useEffect(() => {
+    if (totalItems > 0) {
+      setAnimate(false);
+      const timeout = setTimeout(() => setAnimate(true), 10);
+      const timeout2 = setTimeout(() => setAnimate(false), 1000);
+      return () => {
+        clearTimeout(timeout);
+        clearTimeout(timeout2);
+      };
+    }
+  }, [totalItems]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   useEffect(() => {
     const fetchLogo = async () => {
@@ -52,6 +65,15 @@ export function SiteHeaderClient({ showCart }: SiteHeaderClientProps) {
               aria-label={t("openCart", "es")}
             >
               <ShoppingCart className="size-5" />
+              {totalItems > 0 && (
+                <span
+                  key={totalItems}
+                  className={`absolute -top-2 -right-2 flex items-center justify-center rounded-full bg-red-600 text-white text-xs w-6 h-6 font-bold transition-transform ${animate ? 'animate-bounce-long' : ''}`}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {totalItems}
+                </span>
+              )}
             </Button>
           ) : (
             <div className="text-gray-400 text-sm"></div>
