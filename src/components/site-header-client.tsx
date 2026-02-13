@@ -4,7 +4,8 @@ import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
 import { t } from "@/lib/translations";
-
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 import { useCart } from "@/lib/cart-context";
 
 interface SiteHeaderClientProps {
@@ -13,8 +14,20 @@ interface SiteHeaderClientProps {
 
 export function SiteHeaderClient({ showCart }: SiteHeaderClientProps) {
   const { openCart } = useCart();
-  // Si tienes lógica para el logo, puedes migrarla a un server action o usar un valor estático
-  const logoUrl = "/logo.png";
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchLogo = async () => {
+      const { data, error } = await supabase
+        .from("empresas")
+        .select("logo_url")
+        .limit(1)
+        .single();
+      if (!error && data?.logo_url) {
+        setLogoUrl(data.logo_url);
+      }
+    };
+    fetchLogo();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">

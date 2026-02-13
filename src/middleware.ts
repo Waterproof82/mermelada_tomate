@@ -10,7 +10,7 @@ export async function middleware(request: NextRequest) {
 
   if (accessToken) {
     // Sanitize token: remove any trailing non-token characters (like parenthesis from markdown links)
-    const sanitizedToken = accessToken.replace(/[^a-zA-Z0-9._-]/g, '');
+    const sanitizedToken = accessToken.replaceAll(/[^a-zA-Z0-9._-]/g, '');
 
     console.log('Middleware: Access token found in URL');
     console.log('Middleware: Raw token:', accessToken);
