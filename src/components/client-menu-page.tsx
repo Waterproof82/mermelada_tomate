@@ -1,24 +1,25 @@
 "use client";
 
-import { useState } from "react"
-import { SiteHeader } from "@/components/site-header"
+import { ReactNode } from "react"
+import { MenuCategoryVM } from "@/core/application/dtos/menu-view-model"
 import { HeroBanner } from "@/components/hero-banner"
 import { CategoryNav } from "@/components/category-nav"
 import { MenuSection } from "@/components/menu-section"
 import { SiteFooter } from "@/components/site-footer"
 import { CartDrawer } from "@/components/cart-drawer"
-import { MenuCategoryVM } from "@/core/application/dtos/menu-view-model"
+
+
 
 interface MenuPageProps {
-  menuData: MenuCategoryVM[]
+  menuData: MenuCategoryVM[];
+  header?: ReactNode;
+  showCart?: boolean;
 }
 
-export function MenuPage({ menuData }: MenuPageProps) {
-  const [isCartOpen, setIsCartOpen] = useState(false)
-
+export function MenuPage({ menuData, header, showCart }: MenuPageProps) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader onCartOpen={() => setIsCartOpen(true)} />
+      {typeof header !== 'undefined' ? header : null}
       <main className="flex-1">
         <HeroBanner />
         <div className="container mx-auto max-w-6xl px-4 py-8 md:px-6">
@@ -27,7 +28,7 @@ export function MenuPage({ menuData }: MenuPageProps) {
               <CategoryNav categories={menuData} />
               <div className="mt-10 space-y-16 md:space-y-24">
                 {menuData.map((category) => (
-                  <MenuSection key={category.id} category={category} />
+                  <MenuSection key={category.id} category={category} showCart={showCart} />
                 ))}
               </div>
             </>
@@ -39,7 +40,8 @@ export function MenuPage({ menuData }: MenuPageProps) {
         </div>
       </main>
       <SiteFooter />
-      <CartDrawer open={isCartOpen} onOpenChange={setIsCartOpen} />
+      <CartDrawer />
     </div>
-  )
+  );
 }
+

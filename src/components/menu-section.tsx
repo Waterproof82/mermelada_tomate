@@ -16,10 +16,11 @@ type LanguageKey = 'en' | 'fr' | 'it' | 'de';
 
 interface MenuSectionProps {
   category: MenuCategoryVM
+  showCart?: boolean
 }
 
 export function MenuSection(props: Readonly<MenuSectionProps>) {
-  const { category } = props;
+  const { category, showCart } = props;
   const { addItem } = useCart();
   const { language } = useLanguage() as { language: string };
   const [selectedItem, setSelectedItem] = useState<MenuItemVM | null>(null);
@@ -34,7 +35,7 @@ export function MenuSection(props: Readonly<MenuSectionProps>) {
     addItem(item, quantity);
   };
 
-  const isSalsas = category.id === "salsas";
+  const isSalsas = category.label.toLowerCase() === "salsas";
   const translationLang = (['en', 'fr', 'it', 'de'].includes(language) ? language : undefined) as LanguageKey | undefined;
 
   return (
@@ -67,6 +68,7 @@ export function MenuSection(props: Readonly<MenuSectionProps>) {
               isSalsas={isSalsas}
               language={translationLang}
               onItemClick={handleItemClick}
+              showCart={showCart}
             />
           </motion.div>
         ))}
@@ -87,21 +89,24 @@ function MenuItemCard(props: Readonly<{
   isSalsas: boolean;
   language: LanguageKey | undefined;
   onItemClick: (item: MenuItemVM) => void;
+  showCart?: boolean;
 }>) {
-  const { item, isSalsas, language, onItemClick } = props;
+  const { item, isSalsas, language, onItemClick, showCart } = props;
   const [imageError, setImageError] = useState(false);
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onItemClick(item)}
+      role={showCart ? "button" : undefined}
+      tabIndex={showCart ? 0 : -1}
+      onClick={() => showCart && onItemClick(item)}
       onKeyDown={e => {
-        if (e.key === "Enter" || e.key === " ") {
+        if (showCart && (e.key === "Enter" || e.key === " ")) {
           onItemClick(item);
         }
       }}
-      className={`group flex h-full flex-col overflow-hidden rounded-xl bg-card shadow-sm transition-all hover:shadow-md border cursor-pointer ${
+      className={`group flex h-full flex-col overflow-hidden rounded-xl bg-card shadow-sm transition-all hover:shadow-md border ${
+        showCart ? "cursor-pointer" : ""
+      } ${
         item.highlight ? "border-accent/30 bg-accent/5" : "border-border"
       }`}
     >
@@ -142,7 +147,7 @@ function MenuItemCard(props: Readonly<{
         {/* Always ensure content pushes footer down */}
         <div className="flex-1" />
 
-        {!isSalsas && (
+        {!isSalsas && showCart && (
           <div className="flex items-center justify-between gap-3 pt-4 mt-auto">
             <span className="font-serif text-2xl font-bold text-foreground">
               {item.price.toFixed(2).replace(".", ",")}€
@@ -158,6 +163,13 @@ function MenuItemCard(props: Readonly<{
               <Plus className="mr-2 size-4" />
               {t("addToCart", language || 'es')}
             </Button>
+          </div>
+        )}
+        {!isSalsas && !showCart && (
+          <div className="flex items-center justify-between gap-3 pt-4 mt-auto">
+            <span className="font-serif text-2xl font-bold text-foreground">
+              {item.price.toFixed(2).replace(".", ",")}€
+            </span>
           </div>
         )}
       </div>

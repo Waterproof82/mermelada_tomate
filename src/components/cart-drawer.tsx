@@ -13,18 +13,20 @@ import { useCart } from "@/lib/cart-context"
 import { useLanguage } from "@/lib/language-context"
 import { t } from "@/lib/translations"
 
-interface CartDrawerProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-
-export function CartDrawer(props: Readonly<CartDrawerProps>) {
-  const { open, onOpenChange } = props;
-  const { items, updateQuantity, removeItem, clearCart, totalPrice } = useCart()
+export function CartDrawer() {
+  const { 
+    items, 
+    updateQuantity, 
+    removeItem, 
+    clearCart, 
+    totalPrice, 
+    isCartOpen, 
+    closeCart 
+  } = useCart()
   const { language } = useLanguage()
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={isCartOpen} onOpenChange={closeCart}>
       <SheetContent className="flex w-full flex-col sm:max-w-md bg-background">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 font-serif text-foreground">
