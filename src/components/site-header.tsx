@@ -11,7 +11,7 @@ import { useEffect, useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 
 interface SiteHeaderProps {
-  onCartOpen: () => void
+  readonly onCartOpen: () => void
 }
 
 export function SiteHeader({ onCartOpen }: SiteHeaderProps) {
@@ -29,7 +29,7 @@ export function SiteHeader({ onCartOpen }: SiteHeaderProps) {
         .select("logo_url")
         .limit(1)
         .single()
-      if (!error && data && data.logo_url) {
+      if (!error && data?.logo_url) {
         setLogoUrl(data.logo_url)
       }
     }

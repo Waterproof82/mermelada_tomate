@@ -17,7 +17,7 @@ export function HeroBanner() {
         .select("logo_url")
         .limit(1)
         .single()
-      if (!error && data && data.logo_url) {
+      if (!error && data?.logo_url) {
         setLogoUrl(data.logo_url)
       }
     }
