@@ -21,7 +21,7 @@ export class GetMenuUseCase {
       const catProducts = products.filter((p) => p.categoriaId === cat.id && p.activo);
 
       return {
-        id: cat.nombre.toLowerCase().replaceAll(" ", "-"), // Generamos un slug simple
+        id: `category-${cat.id}`, // Use UUID to ensure uniqueness
         label: cat.nombre,
         translations: cat.translations,
         items: catProducts.map((p) => ({
