@@ -54,6 +54,14 @@ export function SiteFooter() {
             <span>{t("allergenSulphites", language)}</span>
           </div>
         </div>
+        <div className="mt-8 text-center">
+          <a 
+            href="/admin/login" 
+            className="text-[10px] text-muted-foreground/30 hover:text-muted-foreground/50 transition-colors"
+          >
+            Admin
+          </a>
+        </div>
       </div>
     </footer>
   )
