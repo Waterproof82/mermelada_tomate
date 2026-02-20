@@ -1,7 +1,9 @@
 "use client"
 
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react"
+import { Minus, Plus, Trash2, ShoppingBag, User, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Sheet,
   SheetContent,
@@ -34,16 +36,30 @@ export function CartDrawer() {
   const { language } = useLanguage()
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [nombre, setNombre] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [error, setError] = useState('')
 
   const handleConfirmOrder = async () => {
+    setError('');
+    if (!nombre.trim()) {
+      setError('Introduce tu nombre');
+      return;
+    }
+    if (!telefono.trim()) {
+      setError('Introduce tu teléfono');
+      return;
+    }
+
     setSending(true);
     try {
-      const res = await fetch('/api/admin/pedidos/enviar-email', {
+      const res = await fetch('/api/admin/pedidos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: items.map(ci => ({
             item: {
+              id: ci.item.id,
               name: (language !== 'es' && ci.item.translations?.[language]?.name) || ci.item.name,
               price: ci.item.price,
               translations: ci.item.translations,
@@ -55,22 +71,28 @@ export function CartDrawer() {
             })),
           })),
           total: totalPrice,
+          nombre: nombre.trim(),
+          telefono: telefono.trim(),
         }),
       });
       
+      const data = await res.json();
+      
       if (res.ok) {
         setSent(true);
+        setNombre('');
+        setTelefono('');
         setTimeout(() => {
           clearCart();
           closeCart();
           setSent(false);
         }, 2000);
       } else {
-        alert('Error al enviar pedido. Inténtalo de nuevo.');
+        setError(data.error || 'Error al enviar pedido');
       }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error al enviar pedido.');
+    } catch (err) {
+      console.error('Error:', err);
+      setError('Error al enviar pedido');
     } finally {
       setSending(false);
     }
@@ -156,6 +178,30 @@ export function CartDrawer() {
             </div>
 
             <div className="border-t border-border pt-4 pb-6 px-2 bg-background/80 shadow-[0_-2px_16px_0_rgba(0,0,0,0.04)] rounded-b-xl">
+              <div className="space-y-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <User className="size-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Tu nombre"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="size-4 text-muted-foreground" />
+                  <Input
+                    type="tel"
+                    placeholder="Tu teléfono"
+                    value={telefono}
+                    onChange={(e) => setTelefono(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                {error && <p className="text-sm text-red-500">{error}</p>}
+              </div>
+
               <div className="mb-4 flex items-center justify-between px-2">
                 <span className="text-lg font-semibold text-foreground">{t("total", language)}</span>
                 <span className="font-serif text-2xl font-bold text-foreground">

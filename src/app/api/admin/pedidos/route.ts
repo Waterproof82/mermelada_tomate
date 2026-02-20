@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const RESEND_API_KEY = process.env.RESEND_API_KEY!;
 
 interface CartItem {
   item: {
@@ -120,10 +120,6 @@ function generateOrderEmail(items: CartItem[], total: number, empresaNombre: str
 
 export async function POST(request: Request) {
   try {
-    if (!RESEND_API_KEY) {
-      return NextResponse.json({ error: 'Email service not configured' }, { status: 500 });
-    }
-
     const supabase = createClient(supabaseUrl, supabaseKey);
     const domain = await getDomainFromHeaders();
     
@@ -135,7 +131,7 @@ export async function POST(request: Request) {
 
     const { data: empresa } = await supabase
       .from('empresas')
-      .select('email_notification, nombre')
+      .select('id, nombre, email_notification')
       .eq('dominio', mainDomain)
       .single();
 
@@ -143,50 +139,74 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 });
     }
 
-    if (!empresa.email_notification) {
-      return NextResponse.json({ error: 'Email de notificación no configurado' }, { status: 400 });
-    }
-
     const body = await request.json();
-    const { items, total, numeroOrden, nombre, telefono } = body as { 
+    const { items, total, nombre, telefono } = body as { 
       items: CartItem[]; 
       total: number;
-      numeroOrden?: number;
-      nombre?: string;
-      telefono?: string;
+      nombre: string;
+      telefono: string;
     };
 
-    const html = generateOrderEmail(
-      items, 
-      total, 
-      empresa.nombre, 
-      numeroOrden || 1,
-      nombre || 'Cliente',
-      telefono || 'No proporcionado'
-    );
-
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Pedidos <pedidos@resend.dev>',
-        to: empresa.email_notification,
-        subject: `Nuevo pedido de ${empresa.nombre} - ${total.toFixed(2)}€`,
-        html,
-      }),
-    });
-
-    if (!res.ok) {
-      const error = await res.text();
-      return NextResponse.json({ error: 'Error enviando email', details: error }, { status: 500 });
+    if (!nombre?.trim() || !telefono?.trim()) {
+      return NextResponse.json({ error: 'Nombre y teléfono son obligatorios' }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true });
+    const { data: lastOrder } = await supabase
+      .from('pedidos')
+      .select('numero_pedido')
+      .eq('empresa_id', empresa.id)
+      .order('numero_pedido', { ascending: false })
+      .limit(1)
+      .single();
+
+    const nuevoNumeroPedido = (lastOrder?.numero_pedido || 0) + 1;
+
+    const { data: pedido, error: pedidoError } = await supabase
+      .from('pedidos')
+      .insert({
+        empresa_id: empresa.id,
+        numero_pedido: nuevoNumeroPedido,
+        cliente_email: nombre.trim(),
+        cliente_telefono: telefono.trim(),
+        detalle_pedido: items.map(ci => ({
+          producto_id: ci.item.id,
+          nombre: ci.item.name,
+          precio: ci.item.price,
+          cantidad: ci.quantity,
+          complementos: ci.selectedComplements || [],
+        })),
+        total: total,
+        estado: 'pendiente',
+      })
+      .select()
+      .single();
+
+    if (pedidoError) {
+      console.error('Error guardando pedido:', pedidoError);
+      return NextResponse.json({ error: 'Error guardando pedido' }, { status: 500 });
+    }
+
+    if (RESEND_API_KEY && empresa.email_notification) {
+      const html = generateOrderEmail(items, total, empresa.nombre, nuevoNumeroPedido, nombre, telefono);
+      
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Pedidos <pedidos@resend.dev>',
+          to: empresa.email_notification,
+          subject: `Nuevo pedido #${nuevoNumeroPedido} de ${nombre} - ${total.toFixed(2)}€`,
+          html,
+        }),
+      });
+    }
+
+    return NextResponse.json({ success: true, numeroPedido: nuevoNumeroPedido });
   } catch (error) {
-    console.error('Error sending order email:', error);
+    console.error('Error creating order:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
