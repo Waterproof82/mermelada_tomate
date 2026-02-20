@@ -143,12 +143,21 @@ export async function POST(request: Request) {
     const { items, total, nombre, telefono } = body as { 
       items: CartItem[]; 
       total: number;
-      nombre: string;
-      telefono: string;
+      nombre: unknown;
+      telefono: unknown;
     };
 
-    if (!nombre?.trim() || !telefono?.trim()) {
-      return NextResponse.json({ error: 'Nombre y teléfono son obligatorios' }, { status: 400 });
+    const sanitizedNombre = typeof nombre === 'string' ? nombre.trim().slice(0, 100) : '';
+    const sanitizedTelefono = typeof telefono === 'string' ? telefono.replace(/\D/g, '').slice(0, 15) : '';
+
+    if (!sanitizedNombre || sanitizedNombre.length < 2) {
+      return NextResponse.json({ error: 'Nombre inválido' }, { status: 400 });
+    }
+    if (!/^[a-zA-ZÀ-ÿ\s'-]+$/u.test(sanitizedNombre)) {
+      return NextResponse.json({ error: 'Nombre contiene caracteres inválidos' }, { status: 400 });
+    }
+    if (!sanitizedTelefono || sanitizedTelefono.length < 9) {
+      return NextResponse.json({ error: 'Teléfono inválido' }, { status: 400 });
     }
 
     const { data: lastOrder } = await supabase
@@ -166,8 +175,8 @@ export async function POST(request: Request) {
       .insert({
         empresa_id: empresa.id,
         numero_pedido: nuevoNumeroPedido,
-        cliente_email: nombre.trim(),
-        cliente_telefono: telefono.trim(),
+        cliente_email: sanitizedNombre,
+        cliente_telefono: sanitizedTelefono,
         detalle_pedido: items.map(ci => ({
           producto_id: ci.item.id,
           nombre: ci.item.name,

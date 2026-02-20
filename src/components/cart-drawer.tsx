@@ -38,18 +38,39 @@ export function CartDrawer() {
   const [sent, setSent] = useState(false)
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
-  const [error, setError] = useState('')
+  const [errors, setErrors] = useState<{ nombre?: string; telefono?: string }>({})
+
+  const validateName = (name: string): string | undefined => {
+    const trimmed = name.trim();
+    if (!trimmed) return 'El nombre es obligatorio';
+    if (trimmed.length < 2) return 'Mínimo 2 caracteres';
+    if (trimmed.length > 100) return 'Máximo 100 caracteres';
+    if (!/^[a-zA-ZÀ-ÿ\s'-]+$/u.test(trimmed)) return 'Solo letras y espacios';
+    return undefined;
+  };
+
+  const validatePhone = (phone: string): string | undefined => {
+    const trimmed = phone.trim();
+    if (!trimmed) return 'El teléfono es obligatorio';
+    const digitsOnly = trimmed.replace(/\D/g, '');
+    if (digitsOnly.length < 9) return 'Mínimo 9 dígitos';
+    if (digitsOnly.length > 15) return 'Máximo 15 dígitos';
+    return undefined;
+  };
 
   const handleConfirmOrder = async () => {
-    setError('');
-    if (!nombre.trim()) {
-      setError('Introduce tu nombre');
+    setErrors({});
+    
+    const nombreError = validateName(nombre);
+    const telefonoError = validatePhone(telefono);
+    
+    if (nombreError || telefonoError) {
+      setErrors({ nombre: nombreError, telefono: telefonoError });
       return;
     }
-    if (!telefono.trim()) {
-      setError('Introduce tu teléfono');
-      return;
-    }
+
+    const sanitizedNombre = nombre.trim().slice(0, 100);
+    const sanitizedTelefono = telefono.replace(/\D/g, '').slice(0, 15);
 
     setSending(true);
     try {
@@ -71,8 +92,8 @@ export function CartDrawer() {
             })),
           })),
           total: totalPrice,
-          nombre: nombre.trim(),
-          telefono: telefono.trim(),
+          nombre: sanitizedNombre,
+          telefono: sanitizedTelefono,
         }),
       });
       
@@ -88,11 +109,11 @@ export function CartDrawer() {
           setSent(false);
         }, 2000);
       } else {
-        setError(data.error || 'Error al enviar pedido');
+        setErrors({ nombre: data.error || 'Error al enviar pedido' });
       }
     } catch (err) {
       console.error('Error:', err);
-      setError('Error al enviar pedido');
+      setErrors({ nombre: 'Error al enviar pedido' });
     } finally {
       setSending(false);
     }
@@ -179,27 +200,36 @@ export function CartDrawer() {
 
             <div className="border-t border-border pt-4 pb-6 px-2 bg-background/80 shadow-[0_-2px_16px_0_rgba(0,0,0,0.04)] rounded-b-xl">
               <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <User className="size-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Tu nombre"
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    className="h-9"
-                  />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <User className="size-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Tu nombre"
+                      value={nombre}
+                      onChange={(e) => { setNombre(e.target.value); setErrors(prev => ({ ...prev, nombre: undefined })); }}
+                      className={`h-9 ${errors.nombre ? 'border-red-500' : ''}`}
+                      maxLength={100}
+                      autoComplete="name"
+                    />
+                  </div>
+                  {errors.nombre && <p className="text-xs text-red-500 mt-1 ml-6">{errors.nombre}</p>}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="size-4 text-muted-foreground" />
-                  <Input
-                    type="tel"
-                    placeholder="Tu teléfono"
-                    value={telefono}
-                    onChange={(e) => setTelefono(e.target.value)}
-                    className="h-9"
-                  />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="size-4 text-muted-foreground" />
+                    <Input
+                      type="tel"
+                      placeholder="Tu teléfono"
+                      value={telefono}
+                      onChange={(e) => { const val = e.target.value.replace(/\D/g, '').slice(0, 15); setTelefono(val); setErrors(prev => ({ ...prev, telefono: undefined })); }}
+                      className={`h-9 ${errors.telefono ? 'border-red-500' : ''}`}
+                      maxLength={15}
+                      autoComplete="tel"
+                    />
+                  </div>
+                  {errors.telefono && <p className="text-xs text-red-500 mt-1 ml-6">{errors.telefono}</p>}
                 </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
               </div>
 
               <div className="mb-4 flex items-center justify-between px-2">

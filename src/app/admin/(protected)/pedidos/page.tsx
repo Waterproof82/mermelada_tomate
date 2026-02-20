@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
-import { useAdmin } from '@/lib/admin-context';
-import { Search, ChevronDown, ChevronUp, Check, X, Clock, AlertCircle } from 'lucide-react';
+// Removed unused import 'useAdmin'
+import { Search, ChevronDown, ChevronUp, Check, Clock, Trash2 } from 'lucide-react';
 
 interface Pedido {
   id: string;
@@ -17,13 +17,14 @@ interface Pedido {
 }
 
 export default function PedidosPage() {
-  const { empresaId } = useAdmin();
+  // Removed unused empresaId assignment
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<keyof Pedido>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null; numero: number | null }>({ show: false, id: null, numero: null });
 
   useEffect(() => {
     async function fetchPedidos() {
@@ -51,6 +52,9 @@ export default function PedidosPage() {
     .sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
       if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
       if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
       return 0;
@@ -98,6 +102,29 @@ export default function PedidosPage() {
       }
     } catch (error) {
       console.error('Error updating estado:', error);
+    }
+  };
+
+  const deletePedido = async (id: string) => {
+    const orderNum = pedidos.find(p => p.id === id)?.numero_pedido ?? null;
+    setDeleteConfirm({ show: true, id, numero: orderNum });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    try {
+      const res = await fetch('/api/admin/pedidos', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: deleteConfirm.id }),
+      });
+      if (res.ok) {
+        setPedidos(pedidos.filter(p => p.id !== deleteConfirm.id));
+      }
+    } catch (error) {
+      console.error('Error deleting pedido:', error);
+    } finally {
+      setDeleteConfirm({ show: false, id: null, numero: null });
     }
   };
 
@@ -169,29 +196,32 @@ export default function PedidosPage() {
                     {sortField === 'created_at' && (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                   </button>
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredPedidos.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                     No hay pedidos
                   </td>
                 </tr>
               ) : (
                 filteredPedidos.map((pedido) => (
                   <Fragment key={pedido.id}>
-                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer" onClick={() => toggleExpand(pedido.id)}>
-                      <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-900 dark:text-white">
+                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-900 dark:text-white" onClick={() => toggleExpand(pedido.id)}>
                         #{pedido.numero_pedido}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-300">
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-300" onClick={() => toggleExpand(pedido.id)}>
                         {pedido.cliente_email}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-300">
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-300" onClick={() => toggleExpand(pedido.id)}>
                         {pedido.cliente_telefono || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-900 dark:text-white">
+                      <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-900 dark:text-white" onClick={() => toggleExpand(pedido.id)}>
                         {pedido.total.toFixed(2)} {pedido.moneda || '€'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -203,23 +233,32 @@ export default function PedidosPage() {
                           hour: '2-digit', minute: '2-digit'
                         })}
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deletePedido(pedido.id); }}
+                          className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                          title="Eliminar pedido"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
                     </tr>
                     {expandedPedido === pedido.id && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-4 bg-gray-50 dark:bg-gray-700/30">
+                        <td colSpan={7} className="px-4 py-4 bg-gray-50 dark:bg-gray-700/30">
                           <div className="max-w-2xl">
                             <h4 className="font-medium mb-2 dark:text-white">Detalles del pedido:</h4>
                             <ul className="space-y-2 text-sm dark:text-gray-300">
-                              {pedido.detalle_pedido?.map((item: any, idx: number) => (
-                                <li key={idx} className="flex flex-col">
+                              {pedido.detalle_pedido?.map((item: any) => (
+                                <li key={item.nombre + '-' + item.cantidad} className="flex flex-col">
                                   <div className="flex justify-between">
                                     <span>{item.cantidad}x {item.nombre}</span>
                                     <span className="font-medium">{(item.precio * item.cantidad).toFixed(2)}€</span>
                                   </div>
                                   {item.complementos && item.complementos.length > 0 && (
                                     <ul className="ml-4 mt-1 text-xs text-gray-500">
-                                      {item.complementos.map((comp: any, cidx: number) => (
-                                        <li key={cidx}>+ {comp.nombre || comp.name} ({comp.precio || comp.price?.toFixed(2) || '0.00'}€)</li>
+                                      {item.complementos.map((comp: any) => (
+                                        <li key={comp.nombre || comp.name}>+ {comp.nombre || comp.name} ({comp.precio || comp.price?.toFixed(2) || '0.00'}€)</li>
                                       ))}
                                     </ul>
                                   )}
@@ -237,6 +276,36 @@ export default function PedidosPage() {
           </table>
         </div>
       </div>
+
+      {deleteConfirm.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
+                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-lg font-semibold dark:text-white">Eliminar pedido</h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              ¿Estás seguro de que quieres eliminar el pedido <strong>#{deleteConfirm.numero}</strong>? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirm({ show: false, id: null, numero: null })}
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
