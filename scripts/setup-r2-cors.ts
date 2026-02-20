@@ -53,4 +53,4 @@ async function setupCORS() {
   }
 }
 
-setupCORS();
+await setupCORS();

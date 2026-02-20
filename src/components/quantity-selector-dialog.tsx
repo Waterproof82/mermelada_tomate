@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/lib/language-context"
+import { useCart } from "@/lib/cart-context"
 import { t } from "@/lib/translations"
 import type { MenuItemVM } from "@/core/application/dtos/menu-view-model"
 
@@ -28,14 +29,14 @@ interface QuantitySelectorDialogProps {
   item: MenuItemVM | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAddToCart: (item: MenuItemVM, quantity: number, selectedComplements?: Complement[]) => void
 }
 
 export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogProps>) {
-  const { item, open, onOpenChange, onAddToCart } = props;
+  const { item, open, onOpenChange } = props;
   const [quantity, setQuantity] = useState(1)
   const [selectedComplement, setSelectedComplement] = useState<Complement | null>(null)
   const { language } = useLanguage()
+  const { addItem } = useCart()
   const descriptionId = useId()
 
   const complements = item?.complements || [];
@@ -70,9 +71,9 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
       if (item.requiresComplement && !selectedComplement) {
         return;
       }
-      onAddToCart(item, quantity, selectedComplement ? [selectedComplement] : undefined);
+      addItem(item, quantity, selectedComplement ? [selectedComplement] : undefined);
       onOpenChange(false);
-      setQuantity(1); // Reset quantity for next time
+      setQuantity(1);
       setSelectedComplement(null);
     }
   }
