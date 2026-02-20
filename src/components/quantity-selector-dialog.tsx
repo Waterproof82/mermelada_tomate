@@ -93,16 +93,17 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] flex flex-col max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>{t("selectQuantity", language)}</DialogTitle>
           <DialogDescription>
             {t("quantityFor", language)} {(language !== "es" && item.translations?.[language]?.name) || item.name}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
+        
+        <div className="flex-1 overflow-y-auto min-h-0">
           {complements.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-2 pb-4">
               <Label className="text-sm font-medium">
                 Complementos {item.requiresComplement ? '(obligatorio)' : '(opcional)'}
               </Label>
@@ -144,8 +145,10 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
               </div>
             </div>
           )}
-          
-          <div className="grid grid-cols-4 items-center gap-4 pt-2 border-t">
+        </div>
+
+        <div className="border-t pt-4 space-y-3 shrink-0">
+          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="quantity" className="text-right">
               {t("quantity", language)}
             </Label>
@@ -171,12 +174,13 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
               </Button>
             </div>
           </div>
-          <div className="flex justify-between items-center text-lg font-bold pt-2 border-t">
+          <div className="flex justify-between items-center text-lg font-bold">
             <span>{t("total", language)}:</span>
             <span>{totalPrice.toFixed(2).replace(".", ",")}€</span>
           </div>
         </div>
-        <DialogFooter>
+        
+        <DialogFooter className="shrink-0">
           <Button 
             type="button" 
             onClick={handleConfirmAddToCart} 
