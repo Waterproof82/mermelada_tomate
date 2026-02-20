@@ -65,21 +65,40 @@ export default function PedidosPage() {
     }
   };
 
-  const getEstadoBadge = (estado: string) => {
-    switch (estado) {
-      case 'pendiente':
-        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs"><Clock className="w-3 h-3" />Pendiente</span>;
-      case 'completado':
-        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs"><Check className="w-3 h-3" />Completado</span>;
-      case 'cancelado':
-        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-800 text-xs"><X className="w-3 h-3" />Cancelado</span>;
-      default:
-        return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-800 text-xs">{estado}</span>;
-    }
+  const getEstadoBadge = (estado: string, pedidoId: string) => {
+    const isListo = estado === 'listo';
+    return (
+      <button
+        onClick={(e) => { e.stopPropagation(); updateEstado(pedidoId, isListo ? 'pendiente' : 'listo'); }}
+        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+          isListo 
+            ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+        }`}
+      >
+        {isListo ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+        {isListo ? 'Listo' : 'Pendiente'}
+      </button>
+    );
   };
 
   const toggleExpand = (id: string) => {
     setExpandedPedido(expandedPedido === id ? null : id);
+  };
+
+  const updateEstado = async (id: string, nuevoEstado: string) => {
+    try {
+      const res = await fetch('/api/admin/pedidos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, estado: nuevoEstado }),
+      });
+      if (res.ok) {
+        setPedidos(pedidos.map(p => p.id === id ? { ...p, estado: nuevoEstado } : p));
+      }
+    } catch (error) {
+      console.error('Error updating estado:', error);
+    }
   };
 
   if (loading) {
@@ -176,7 +195,7 @@ export default function PedidosPage() {
                         {pedido.total.toFixed(2)} {pedido.moneda || '€'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {getEstadoBadge(pedido.estado)}
+                        {getEstadoBadge(pedido.estado, pedido.id)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 text-sm">
                         {new Date(pedido.created_at).toLocaleDateString('es-ES', { 

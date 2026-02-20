@@ -48,3 +48,47 @@ export async function GET() {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('admin_token')?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
+    const adminId = payload.adminId as string;
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: perfil } = await supabase
+      .from('perfiles_admin')
+      .select('empresa_id')
+      .eq('id', adminId)
+      .single();
+
+    if (!perfil) {
+      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
+    }
+
+    const body = await request.json();
+    const { id, estado } = body;
+
+    const { error } = await supabase
+      .from('pedidos')
+      .update({ estado })
+      .eq('id', id)
+      .eq('empresa_id', perfil.empresa_id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating pedido:', error);
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  }
+}
