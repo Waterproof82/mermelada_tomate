@@ -37,17 +37,7 @@ export function MenuSection(props: Readonly<MenuSectionProps>) {
   };
 
   const handleAddToCartWithQuantity = (item: MenuItemVM, quantity: number, complements?: Complement[]) => {
-    if (complements && complements.length > 0) {
-      const complementTotal = complements.reduce((sum, c) => sum + c.price, 0);
-      const itemWithComplements = {
-        ...item,
-        name: `${item.name} + ${complements.map(c => c.name).join(', ')}`,
-        price: item.price + complementTotal,
-      };
-      addItem(itemWithComplements, quantity);
-    } else {
-      addItem(item, quantity);
-    }
+    addItem(item, quantity, complements);
   };
 
   const isCategoryWithComplements = category.items.some((item) => item.complements && item.complements.length > 0);

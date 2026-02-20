@@ -34,7 +34,7 @@ interface QuantitySelectorDialogProps {
 export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogProps>) {
   const { item, open, onOpenChange, onAddToCart } = props;
   const [quantity, setQuantity] = useState(1)
-  const [selectedComplements, setSelectedComplements] = useState<Complement[]>([])
+  const [selectedComplement, setSelectedComplement] = useState<Complement | null>(null)
   const { language } = useLanguage()
   const descriptionId = useId()
 
@@ -58,21 +58,19 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
   }
 
   const toggleComplement = (complement: Complement) => {
-    setSelectedComplements((prev) => {
-      const exists = prev.find((c) => c.id === complement.id);
-      if (exists) {
-        return prev.filter((c) => c.id !== complement.id);
-      }
-      return [...prev, complement];
-    });
+    if (selectedComplement?.id === complement.id) {
+      setSelectedComplement(null);
+    } else {
+      setSelectedComplement(complement);
+    }
   }
 
   const handleConfirmAddToCart = () => {
     if (item && quantity > 0) {
-      onAddToCart(item, quantity, selectedComplements);
+      onAddToCart(item, quantity, selectedComplement ? [selectedComplement] : undefined);
       onOpenChange(false);
       setQuantity(1); // Reset quantity for next time
-      setSelectedComplements([]);
+      setSelectedComplement(null);
     }
   }
 
@@ -80,11 +78,11 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
   useEffect(() => {
     if (open && item) {
       setQuantity(1); // Reset to 1 when a new item is selected for the dialog
-      setSelectedComplements([]);
+      setSelectedComplement(null);
     }
   }, [open, item])
 
-  const totalComplementsPrice = selectedComplements.reduce((sum, c) => sum + c.price, 0);
+  const totalComplementsPrice = selectedComplement ? selectedComplement.price : 0;
   const totalPrice = (item ? item.price + totalComplementsPrice : 0) * quantity;
 
   if (!item) return null
@@ -106,7 +104,7 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
               </Label>
               <div className="space-y-2">
                 {complements.map((complement) => {
-                  const isSelected = selectedComplements.some((c) => c.id === complement.id);
+                  const isSelected = selectedComplement?.id === complement.id;
                   return (
                     <button
                       key={complement.id}
@@ -115,11 +113,11 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
                       className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
                         isSelected 
                           ? 'border-primary bg-primary/10' 
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-gray-200 hover:border-gray-300 dark:border-gray-600'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                           isSelected ? 'bg-primary border-primary' : 'border-gray-300'
                         }`}>
                           {isSelected && <Check className="w-3 h-3 text-white" />}
