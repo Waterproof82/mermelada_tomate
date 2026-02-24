@@ -118,16 +118,195 @@ function generateOrderEmail(items: CartItem[], total: number, empresaNombre: str
   `.trim();
 }
 
+
+function parseMainDomain(domain: string): string {
+  const subdomainPedidos = 'pedidos';
+  const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
+  return isPedidos
+    ? domain.replace(/^pedidos\./, '').replace(/-pedidos$/, '')
+    : domain;
+}
+
+function validateOrderInputs(nombre: unknown, telefono: unknown, email?: string) {
+  const sanitizedNombre = typeof nombre === 'string' ? nombre.trim().slice(0, 100) : '';
+  const sanitizedTelefono = typeof telefono === 'string' ? telefono.replaceAll(/\D/g, '').slice(0, 15) : '';
+  const sanitizedEmail = typeof email === 'string' && email.trim()
+    ? email.trim().toLowerCase().slice(0, 100)
+    : null;
+
+  if (!sanitizedNombre || sanitizedNombre.length < 2) {
+    return { error: 'Nombre inválido', status: 400 };
+  }
+  if (!/^[a-zA-ZÀ-ÿ\s'-]+$/u.test(sanitizedNombre)) {
+    return { error: 'Nombre contiene caracteres inválidos', status: 400 };
+  }
+  if (!sanitizedTelefono || sanitizedTelefono.length < 9) {
+    return { error: 'Teléfono inválido', status: 400 };
+  }
+  return {
+    sanitizedNombre,
+    sanitizedTelefono,
+    sanitizedEmail,
+  };
+}
+
+
+
+async function upsertClienteByEmail(supabase: any, empresaId: string, nombre: string, telefono: string, email: string): Promise<string | null> {
+  const { data: existingCliente } = await supabase
+    .from('clientes')
+    .select('id')
+    .eq('empresa_id', empresaId)
+    .eq('email', email)
+    .single();
+  if (existingCliente) {
+    await supabase
+      .from('clientes')
+      .update({ nombre, telefono })
+      .eq('id', existingCliente.id);
+    return existingCliente.id;
+  } else {
+    const { data: newCliente, error: clienteError } = await supabase
+      .from('clientes')
+      .insert({
+        empresa_id: empresaId,
+        email,
+        nombre,
+        telefono,
+        aceptar_promociones: true,
+      })
+      .select('id')
+      .single();
+    if (!clienteError && newCliente) {
+      return newCliente.id;
+    }
+  }
+  return null;
+}
+
+async function upsertClienteByTelefono(supabase: any, empresaId: string, nombre: string, telefono: string): Promise<string | null> {
+  const { data: existingCliente } = await supabase
+    .from('clientes')
+    .select('id')
+    .eq('empresa_id', empresaId)
+    .eq('telefono', telefono)
+    .is('email', null)
+    .single();
+  if (existingCliente) {
+    await supabase
+      .from('clientes')
+      .update({ nombre })
+      .eq('id', existingCliente.id);
+    return existingCliente.id;
+  } else {
+    const { data: newCliente, error: clienteError } = await supabase
+      .from('clientes')
+      .insert({
+        empresa_id: empresaId,
+        nombre,
+        telefono,
+      })
+      .select('id')
+      .single();
+    if (!clienteError && newCliente) {
+      return newCliente.id;
+    }
+  }
+  return null;
+}
+
+async function upsertCliente(supabase: any, empresaId: string, nombre: string, telefono: string, email?: string | null): Promise<string | null> {
+  if (email) {
+    return upsertClienteByEmail(supabase, empresaId, nombre, telefono, email);
+  } else if (telefono) {
+    return upsertClienteByTelefono(supabase, empresaId, nombre, telefono);
+  }
+  return null;
+}
+
+async function createPedido(supabase: any, empresaId: string, clienteId: string | null, items: CartItem[], total: number) {
+  const { data: lastOrder } = await supabase
+    .from('pedidos')
+    .select('numero_pedido')
+    .eq('empresa_id', empresaId)
+    .order('numero_pedido', { ascending: false })
+    .limit(1)
+    .single();
+  const nuevoNumeroPedido = (lastOrder?.numero_pedido || 0) + 1;
+  const { error: pedidoError } = await supabase
+    .from('pedidos')
+    .insert({
+      empresa_id: empresaId,
+      numero_pedido: nuevoNumeroPedido,
+      cliente_id: clienteId,
+      detalle_pedido: items.map(ci => ({
+        producto_id: ci.item.id,
+        nombre: ci.item.name,
+        precio: ci.item.price,
+        cantidad: ci.quantity,
+        complementos: ci.selectedComplements || [],
+      })),
+      total: total,
+      estado: 'pendiente',
+    })
+    .select()
+    .single();
+  return { pedidoError, nuevoNumeroPedido };
+}
+
+
+type OrderEmailInfo = {
+  empresa: any;
+  clienteId: string | null;
+  sanitizedNombre: string;
+  sanitizedTelefono: string;
+  items: CartItem[];
+  total: number;
+  nuevoNumeroPedido: number;
+};
+
+async function sendOrderEmail(supabase: any, info: OrderEmailInfo) {
+  let safeNombre = info.sanitizedNombre;
+  let safeTelefono = info.sanitizedTelefono;
+  if (info.clienteId) {
+    const { data: cliente } = await supabase
+      .from('clientes')
+      .select('nombre, telefono')
+      .eq('id', info.clienteId)
+      .single();
+    if (cliente) {
+      safeNombre = cliente.nombre || safeNombre;
+      safeTelefono = cliente.telefono || safeTelefono;
+    }
+  }
+  const html = generateOrderEmail(
+    info.items,
+    info.total,
+    info.empresa.nombre,
+    info.nuevoNumeroPedido,
+    safeNombre,
+    safeTelefono
+  );
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'Pedidos <pedidos@resend.dev>',
+      to: info.empresa.email_notification,
+      subject: `Nuevo pedido #${info.nuevoNumeroPedido} de ${safeNombre} - ${info.total.toFixed(2)}€`,
+      html,
+    }),
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
     const domain = await getDomainFromHeaders();
-    
-    const subdomainPedidos = 'pedidos';
-    const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
-    const mainDomain = isPedidos 
-      ? domain.replace(/^pedidos\./, '').replace(/-pedidos$/, '')
-      : domain;
+    const mainDomain = parseMainDomain(domain);
 
     const { data: empresa } = await supabase
       .from('empresas')
@@ -140,82 +319,37 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { items, total, nombre, telefono, email } = body as { 
-      items: CartItem[]; 
+    const { items, total, nombre, telefono, email } = body as {
+      items: CartItem[];
       total: number;
       nombre: unknown;
       telefono: unknown;
       email?: string;
     };
 
-    const sanitizedNombre = typeof nombre === 'string' ? nombre.trim().slice(0, 100) : '';
-    const sanitizedTelefono = typeof telefono === 'string' ? telefono.replaceAll(/\D/g, '').slice(0, 15) : '';
-    const sanitizedEmail = typeof email === 'string' && email.trim() 
-      ? email.trim().toLowerCase().slice(0, 100) 
-      : null;
-
-    if (!sanitizedNombre || sanitizedNombre.length < 2) {
-      return NextResponse.json({ error: 'Nombre inválido' }, { status: 400 });
+    const validation = validateOrderInputs(nombre, telefono, email);
+    if ('error' in validation) {
+      return NextResponse.json({ error: validation.error }, { status: validation.status });
     }
-    if (!/^[a-zA-ZÀ-ÿ\s'-]+$/u.test(sanitizedNombre)) {
-      return NextResponse.json({ error: 'Nombre contiene caracteres inválidos' }, { status: 400 });
-    }
-    if (!sanitizedTelefono || sanitizedTelefono.length < 9) {
-      return NextResponse.json({ error: 'Teléfono inválido' }, { status: 400 });
-    }
+    const { sanitizedNombre, sanitizedTelefono, sanitizedEmail } = validation;
 
-    const { data: lastOrder } = await supabase
-      .from('pedidos')
-      .select('numero_pedido')
-      .eq('empresa_id', empresa.id)
-      .order('numero_pedido', { ascending: false })
-      .limit(1)
-      .single();
+    const clienteId = await upsertCliente(supabase, empresa.id, sanitizedNombre, sanitizedTelefono, sanitizedEmail);
 
-    const nuevoNumeroPedido = (lastOrder?.numero_pedido || 0) + 1;
-
-    const { error: pedidoError } = await supabase
-      .from('pedidos')
-      .insert({
-        empresa_id: empresa.id,
-        numero_pedido: nuevoNumeroPedido,
-        nombre_cliente: sanitizedNombre,
-        cliente_email: sanitizedEmail,
-        cliente_telefono: sanitizedTelefono,
-        detalle_pedido: items.map(ci => ({
-          producto_id: ci.item.id,
-          nombre: ci.item.name,
-          precio: ci.item.price,
-          cantidad: ci.quantity,
-          complementos: ci.selectedComplements || [],
-        })),
-        total: total,
-        estado: 'pendiente',
-      })
-      .select()
-      .single();
-
+    const { pedidoError, nuevoNumeroPedido } = await createPedido(supabase, empresa.id, clienteId, items, total);
     if (pedidoError) {
       console.error('Error guardando pedido:', pedidoError);
       return NextResponse.json({ error: 'Error guardando pedido' }, { status: 500 });
     }
 
     if (RESEND_API_KEY && empresa.email_notification) {
-      const safeNombre = typeof nombre === 'string' ? nombre : '';
-      const safeTelefono = typeof telefono === 'string' ? telefono : '';
-      const html = generateOrderEmail(items, total, empresa.nombre, nuevoNumeroPedido, safeNombre, safeTelefono);
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'Pedidos <pedidos@resend.dev>',
-          to: empresa.email_notification,
-          subject: `Nuevo pedido #${nuevoNumeroPedido} de ${safeNombre} - ${total.toFixed(2)}€`,
-          html,
-        }),
+      await sendOrderEmail(supabase, {
+        empresa,
+        clienteId,
+        sanitizedNombre,
+        sanitizedTelefono,
+        items,
+        total,
+        nuevoNumeroPedido,
       });
     }
 
