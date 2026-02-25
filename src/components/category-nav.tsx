@@ -30,7 +30,7 @@ export function CategoryNav(props: Readonly<CategoryNavProps>) {
           setActiveId(sorted[0].target.id)
         }
       },
-      { rootMargin: "-120px 0px -60% 0px", threshold: 0.1 }
+      { rootMargin: "-100px 0px -70% 0px", threshold: 0 }
     )
 
     for (const cat of categories) {
@@ -63,7 +63,7 @@ export function CategoryNav(props: Readonly<CategoryNavProps>) {
       isManualScrolling.current = true
       setActiveId(id)
 
-      const offset = window.innerWidth >= 768 ? 140 : 120
+      const offset = window.innerWidth >= 768 ? 140 : 100
       const elementPosition = el.getBoundingClientRect().top + window.scrollY
       const offsetPosition = elementPosition - offset
 
@@ -82,7 +82,7 @@ export function CategoryNav(props: Readonly<CategoryNavProps>) {
   return (
     <nav
       ref={navRef}
-      className="sticky top-16 z-40 -mx-4 overflow-x-auto border-b border-border bg-background/95 px-4 backdrop-blur-sm md:top-20"
+      className="sticky top-16 z-40 -mx-4 overflow-x-auto border-b border-border bg-background/95 px-4 backdrop-blur-sm md:top-20 [-webkit-overflow-scrolling:touch]"
       aria-label="Categorias del menu"
     >
       <div className="flex gap-1 py-2">

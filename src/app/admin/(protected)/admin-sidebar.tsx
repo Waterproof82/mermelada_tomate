@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Utensils, Tags, LogOut, Menu, X, Bell, ShoppingCart, BarChart3, Users, Megaphone } from 'lucide-react';
+import { LayoutDashboard, Utensils, Tags, LogOut, Menu, X, Bell, ShoppingCart, BarChart3, Users, Megaphone, Settings } from 'lucide-react';
 // Removed unused import 'useTheme'
 
 interface NavItem {
@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { href: '/admin/promociones', label: 'Promociones', icon: Megaphone },
   { href: '/admin/estadisticas', label: 'Estadísticas', icon: BarChart3 },
   { href: '/admin/notificaciones', label: 'Notificaciones', icon: Bell },
+  { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
 ];
 
 interface AdminSidebarProps {
@@ -38,7 +39,7 @@ export function AdminSidebar({ session }: Readonly<AdminSidebarProps>) {
       {/* Mobile header - solo visible en mobile */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 shadow-sm z-30 flex items-center justify-between px-4">
         <h1 className="text-lg font-serif font-bold text-primary dark:text-white">
-          Mermelada Admin
+          Administración
         </h1>
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -69,7 +70,7 @@ export function AdminSidebar({ session }: Readonly<AdminSidebarProps>) {
           {/* Desktop logo */}
           <div className="hidden lg:block p-6 border-b dark:border-gray-700">
             <h1 className="text-xl font-serif font-bold text-primary dark:text-white">
-              Mermelada Admin
+              Administración
             </h1>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {session?.empresaId ? 'Empresa conectada' : 'Panel'}

@@ -25,6 +25,16 @@ export interface EmpresaInfo {
   subdomainPedidos: string | null;
   logoUrl: string | null;
   urlImage: string | null;
+  colores: {
+    primary: string;
+    primaryForeground: string;
+    secondary: string;
+    secondaryForeground: string;
+    accent: string;
+    accentForeground: string;
+    background: string;
+    foreground: string;
+  } | null;
   descripcion: {
     es?: string;
     en?: string;
@@ -75,6 +85,8 @@ export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | 
     .select(`
       id, nombre, dominio, mostrar_carrito, moneda, subdomain_pedidos, 
       logo_url, url_image, 
+      color_primary, color_primary_foreground, color_secondary, color_secondary_foreground,
+      color_accent, color_accent_foreground, color_background, color_foreground,
       descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de,
       titulo, subtitulo,
       subtitulo2_es, subtitulo2_en, subtitulo2_fr, subtitulo2_it, subtitulo2_de,
@@ -86,6 +98,19 @@ export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | 
 
   if (error || !data) return null;
 
+  const colores = data.color_primary
+    ? {
+        primary: data.color_primary,
+        primaryForeground: data.color_primary_foreground,
+        secondary: data.color_secondary,
+        secondaryForeground: data.color_secondary_foreground,
+        accent: data.color_accent,
+        accentForeground: data.color_accent_foreground,
+        background: data.color_background,
+        foreground: data.color_foreground,
+      }
+    : null;
+
   return {
     id: data.id,
     nombre: data.nombre,
@@ -95,6 +120,7 @@ export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | 
     subdomainPedidos: data.subdomain_pedidos ?? null,
     logoUrl: data.logo_url ?? null,
     urlImage: data.url_image ?? null,
+    colores,
     descripcion: mapTranslations(data, 'descripcion'),
     titulo: data.titulo ?? null,
     subtitulo: data.subtitulo ?? null,
