@@ -48,6 +48,17 @@ export interface Tenant {
   logoUrl: string | null;
 }
 
+export interface EmpresaColores {
+  primary: string;
+  primaryForeground: string;
+  secondary: string;
+  secondaryForeground: string;
+  accent: string;
+  accentForeground: string;
+  background: string;
+  foreground: string;
+}
+
 export interface Empresa {
   id: string;
   nombre: string;
@@ -57,6 +68,7 @@ export interface Empresa {
   moneda: string;
   emailNotification: string | null;
   urlImage: string | null;
+  colores: EmpresaColores | null;
   descripcion: {
     es?: string;
     en?: string;

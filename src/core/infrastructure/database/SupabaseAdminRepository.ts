@@ -97,6 +97,40 @@ export class SupabaseAdminRepository implements IAdminRepository {
     return this.mapEmpresa(empresa);
   }
 
+  async updateColores(empresaId: string, colores: {
+    primary: string;
+    primaryForeground: string;
+    secondary: string;
+    secondaryForeground: string;
+    accent: string;
+    accentForeground: string;
+    background: string;
+    foreground: string;
+  }): Promise<boolean> {
+    const supabaseAdmin = getSupabaseAdmin();
+
+    const { error } = await supabaseAdmin
+      .from("empresas")
+      .update({
+        color_primary: colores.primary,
+        color_primary_foreground: colores.primaryForeground,
+        color_secondary: colores.secondary,
+        color_secondary_foreground: colores.secondaryForeground,
+        color_accent: colores.accent,
+        color_accent_foreground: colores.accentForeground,
+        color_background: colores.background,
+        color_foreground: colores.foreground,
+      })
+      .eq("id", empresaId);
+
+    if (error) {
+      console.log('[Repo] Error updating colores:', error.message);
+      return false;
+    }
+
+    return true;
+  }
+
   private mapEmpresa(row: any): Empresa {
     const descripcion = row.descripcion_es || row.descripcion_en || row.descripcion_fr || row.descripcion_it || row.descripcion_de
       ? {
@@ -105,6 +139,19 @@ export class SupabaseAdminRepository implements IAdminRepository {
           fr: row.descripcion_fr || null,
           it: row.descripcion_it || null,
           de: row.descripcion_de || null,
+        }
+      : null;
+
+    const colores = row.color_primary
+      ? {
+          primary: row.color_primary || '#008C45',
+          primaryForeground: row.color_primary_foreground || '#FFFFFF',
+          secondary: row.color_secondary || '#F7E7CE',
+          secondaryForeground: row.color_secondary_foreground || '#3C2415',
+          accent: row.color_accent || '#CF0921',
+          accentForeground: row.color_accent_foreground || '#FFFFFF',
+          background: row.color_background || '#FDFBF7',
+          foreground: row.color_foreground || '#1A1612',
         }
       : null;
 
@@ -118,6 +165,7 @@ export class SupabaseAdminRepository implements IAdminRepository {
       emailNotification: row.email_notification ?? null,
       urlImage: row.url_image ?? null,
       descripcion,
+      colores,
     };
   }
 }

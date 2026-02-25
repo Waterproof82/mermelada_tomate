@@ -3,6 +3,7 @@ import { MenuPage } from "@/components/client-menu-page"
 import SiteHeaderWrapper from "@/components/site-header-wrapper";
 import type { MenuCategoryVM } from "@/core/application/dtos/menu-view-model"
 import { headers } from 'next/headers';
+import { EmpresaThemeProvider } from "@/components/empresa-theme-provider";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -42,5 +43,9 @@ export default async function Home() {
   }
 
   const header = await SiteHeaderWrapper({ showCart, empresa });
-  return <MenuPage menuData={menuData} header={header} showCart={showCart} empresa={empresa} />;
+  return (
+    <EmpresaThemeProvider colores={empresa?.colores || null}>
+      <MenuPage menuData={menuData} header={header} showCart={showCart} empresa={empresa} />
+    </EmpresaThemeProvider>
+  );
 }
