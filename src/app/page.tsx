@@ -19,6 +19,8 @@ async function getDomainFromHeaders(): Promise<string> {
 export default async function Home() {
   const fullDomain = await getDomainFromHeaders();
   
+  console.log('DEBUG: fullDomain:', fullDomain);
+  
   let empresa = fullDomain ? await getEmpresaByDomain(fullDomain) : null;
   
   const subdomainConfig = empresa?.subdomainPedidos ?? 'pedidos';
@@ -30,6 +32,8 @@ export default async function Home() {
   }
   
   const empresaId = empresa?.id;
+  
+  console.log('DEBUG: empresa:', empresa, 'empresaId:', empresaId);
   
   if (!empresa && empresaId === undefined) {
     return (
