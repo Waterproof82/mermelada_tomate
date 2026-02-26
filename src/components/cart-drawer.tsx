@@ -111,7 +111,7 @@ export function CartDrawer() {
       
       if (res.ok) {
         if (data.whatsappLink) {
-          window.open(data.whatsappLink, '_blank');
+          window.location.href = data.whatsappLink;
         }
         setSent(true);
         setNombre('');
