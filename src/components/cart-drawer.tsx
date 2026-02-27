@@ -48,13 +48,6 @@ export function CartDrawer() {
   const [email, setEmail] = useState('')
   const [errors, setErrors] = useState<{ nombre?: string; telefono?: string }>({})
 
-  let waWindow: Window | null = null;
-
-  const ocultarAviso = () => {
-    const aviso = document.getElementById('whatsapp-aviso');
-    if (aviso) aviso.style.display = 'none';
-  };
-
   const isMobileDevice = () => {
     const userAgent = navigator.userAgent;
     const isTouchDevice = navigator.maxTouchPoints > 0;
@@ -70,124 +63,34 @@ export function CartDrawer() {
     const esMobile = isMobileDevice();
 
     if (esMobile) {
-      const opened = window.open(appUrl, '_blank');
+      window.location.href = appUrl;
       setTimeout(() => {
-        if (!opened || opened.closed) {
-          window.location.href = webUrl;
-        }
+        window.location.href = webUrl;
       }, 1500);
       return;
     }
 
-    const opened = window.open(appUrl, '_blank');
-    
-    const fallbackTimer = setTimeout(() => {
-      if (!opened || opened.closed) {
-        mostrarOpcionWeb(numero, textoEncoded);
+    const anchor = document.createElement('a');
+    anchor.href = appUrl;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+
+    let appOpened = false;
+    const checkOpened = setInterval(() => {
+      if (!document.hidden) {
+        appOpened = true;
+        clearInterval(checkOpened);
+      }
+    }, 500);
+
+    setTimeout(() => {
+      clearInterval(checkOpened);
+      if (!appOpened) {
+        window.location.href = webUrl;
       }
     }, 8000);
-
-    window.addEventListener('blur', () => {
-      setTimeout(() => {
-        if (opened && !opened.closed) {
-          clearTimeout(fallbackTimer);
-        }
-      }, 1000);
-    }, { once: true });
-  };
-
-  const mostrarOpcionWeb = (numero: string, textoEncoded: string) => {
-    let aviso = document.getElementById('whatsapp-aviso');
-    if (!aviso) {
-      aviso = document.createElement('div');
-      aviso.id = 'whatsapp-aviso';
-      aviso.style.cssText = `
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        background: #fff;
-        border: 1px solid #ddd;
-        border-radius: 12px;
-        padding: 16px 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        font-family: sans-serif;
-        font-size: 14px;
-        z-index: 9999;
-        max-width: 300px;
-      `;
-      document.body.appendChild(aviso);
-    }
-
-    aviso.innerHTML = `
-      <p style="margin: 0 0 4px; color: #333; font-weight: bold;">¿No tienes WhatsApp instalado?</p>
-      <p style="margin: 0 0 12px; color: #666; font-size: 13px;">
-        Abre WhatsApp Web, espera a que cargue y pulsa "Ya cargó".
-      </p>
-      <button id="whatsapp-web-btn" style="
-        background: #25D366;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 16px;
-        cursor: pointer;
-        font-size: 14px;
-        width: 100%;
-        margin-bottom: 8px;
-      ">
-        🌐 Abrir WhatsApp Web
-      </button>
-      <button id="whatsapp-reintento-btn" style="
-        background: #f0f0f0;
-        color: #333;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 16px;
-        cursor: pointer;
-        font-size: 14px;
-        width: 100%;
-        display: none;
-      ">
-        ✅ Ya cargó, enviar mensaje
-      </button>
-      <button id="whatsapp-cerrar-btn" style="
-        background: none;
-        border: none;
-        color: #999;
-        cursor: pointer;
-        font-size: 12px;
-        margin-top: 8px;
-        width: 100%;
-      ">
-        Cancelar
-      </button>
-    `;
-    aviso.style.display = 'block';
-
-    document.getElementById('whatsapp-web-btn')?.addEventListener('click', () => {
-      waWindow = window.open('https://web.whatsapp.com', 'whatsapp_window');
-      const retryBtn = document.getElementById('whatsapp-reintento-btn');
-      const webBtn = document.getElementById('whatsapp-web-btn');
-      const desc = aviso?.querySelector('p:nth-child(2)');
-      if (retryBtn) retryBtn.style.display = 'block';
-      if (webBtn) webBtn.style.display = 'none';
-      if (desc) desc.textContent = 'Cuando WhatsApp Web haya cargado, pulsa el botón.';
-    });
-
-    document.getElementById('whatsapp-reintento-btn')?.addEventListener('click', () => {
-      if (waWindow && !waWindow.closed) waWindow.close();
-      setTimeout(() => {
-        waWindow = window.open(
-          `https://web.whatsapp.com/send?phone=${numero}&text=${textoEncoded}`,
-          '_blank'
-        );
-      }, 300);
-      ocultarAviso();
-    });
-
-    document.getElementById('whatsapp-cerrar-btn')?.addEventListener('click', () => {
-      if (waWindow && !waWindow.closed) waWindow.close();
-      ocultarAviso();
-    });
   };
 
   const handleWhatsAppClick = () => {
