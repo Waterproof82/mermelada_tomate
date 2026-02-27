@@ -50,6 +50,11 @@ export function CartDrawer() {
 
   let waWindow: Window | null = null;
 
+  const ocultarAviso = () => {
+    const aviso = document.getElementById('whatsapp-aviso');
+    if (aviso) aviso.style.display = 'none';
+  };
+
   const abrirWhatsApp = (numero: string, mensaje: string) => {
     const textoEncoded = encodeURIComponent(mensaje);
     const esMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -62,11 +67,19 @@ export function CartDrawer() {
       return;
     }
 
-    waWindow = window.open('https://web.whatsapp.com', 'whatsapp_window');
-    mostrarBotonReintento(numero, textoEncoded);
+    const appUrl = `whatsapp://send?phone=${numero}&text=${textoEncoded}`;
+    window.location.href = appUrl;
+
+    const fallbackTimer = setTimeout(() => {
+      mostrarOpcionWeb(numero, textoEncoded);
+    }, 3000);
+
+    window.addEventListener('blur', () => {
+      clearTimeout(fallbackTimer);
+    }, { once: true });
   };
 
-  const mostrarBotonReintento = (numero: string, textoEncoded: string) => {
+  const mostrarOpcionWeb = (numero: string, textoEncoded: string) => {
     let aviso = document.getElementById('whatsapp-aviso');
     if (!aviso) {
       aviso = document.createElement('div');
@@ -88,17 +101,12 @@ export function CartDrawer() {
       document.body.appendChild(aviso);
     }
 
-    const ocultarAviso = () => {
-      const el = document.getElementById('whatsapp-aviso');
-      if (el) el.style.display = 'none';
-    };
-
     aviso.innerHTML = `
-      <p style="margin: 0 0 4px; color: #333; font-weight: bold;">WhatsApp Web está cargando</p>
+      <p style="margin: 0 0 4px; color: #333; font-weight: bold;">¿No tienes WhatsApp instalado?</p>
       <p style="margin: 0 0 12px; color: #666; font-size: 13px;">
-        Espera a que cargue completamente y pulsa el botón. Se cerrará y reabrirá con el mensaje listo.
+        Abre WhatsApp Web, espera a que cargue y pulsa "Ya cargó".
       </p>
-      <button id="whatsapp-reintento-btn" style="
+      <button id="whatsapp-web-btn" style="
         background: #25D366;
         color: white;
         border: none;
@@ -107,8 +115,22 @@ export function CartDrawer() {
         cursor: pointer;
         font-size: 14px;
         width: 100%;
+        margin-bottom: 8px;
       ">
-        ✅ Ya cargó, abrir con mensaje
+        🌐 Abrir WhatsApp Web
+      </button>
+      <button id="whatsapp-reintento-btn" style="
+        background: #f0f0f0;
+        color: #333;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        width: 100%;
+        display: none;
+      ">
+        ✅ Ya cargó, enviar mensaje
       </button>
       <button id="whatsapp-cerrar-btn" style="
         background: none;
@@ -124,10 +146,18 @@ export function CartDrawer() {
     `;
     aviso.style.display = 'block';
 
+    document.getElementById('whatsapp-web-btn')?.addEventListener('click', () => {
+      waWindow = window.open('https://web.whatsapp.com', 'whatsapp_window');
+      const retryBtn = document.getElementById('whatsapp-reintento-btn');
+      const webBtn = document.getElementById('whatsapp-web-btn');
+      const desc = aviso?.querySelector('p:nth-child(2)');
+      if (retryBtn) retryBtn.style.display = 'block';
+      if (webBtn) webBtn.style.display = 'none';
+      if (desc) desc.textContent = 'Cuando WhatsApp Web haya cargado, pulsa el botón.';
+    });
+
     document.getElementById('whatsapp-reintento-btn')?.addEventListener('click', () => {
-      if (waWindow && !waWindow.closed) {
-        waWindow.close();
-      }
+      if (waWindow && !waWindow.closed) waWindow.close();
       setTimeout(() => {
         waWindow = window.open(
           `https://web.whatsapp.com/send?phone=${numero}&text=${textoEncoded}`,
@@ -141,11 +171,6 @@ export function CartDrawer() {
       if (waWindow && !waWindow.closed) waWindow.close();
       ocultarAviso();
     });
-  };
-
-  const ocultarAvisoGlobal = () => {
-    const aviso = document.getElementById('whatsapp-aviso');
-    if (aviso) aviso.style.display = 'none';
   };
 
   const handleWhatsAppClick = () => {
