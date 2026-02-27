@@ -55,27 +55,44 @@ export function CartDrawer() {
     if (aviso) aviso.style.display = 'none';
   };
 
+  const isMobileDevice = () => {
+    const userAgent = navigator.userAgent;
+    const isTouchDevice = navigator.maxTouchPoints > 0;
+    const isAndroid = /Android/i.test(userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+    return isTouchDevice || isAndroid || isIOS;
+  };
+
   const abrirWhatsApp = (numero: string, mensaje: string) => {
     const textoEncoded = encodeURIComponent(mensaje);
-    const esMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    const appUrl = `whatsapp://send?phone=${numero}&text=${textoEncoded}`;
+    const webUrl = `https://wa.me/${numero}?text=${textoEncoded}`;
+    const esMobile = isMobileDevice();
 
     if (esMobile) {
-      window.location.href = `whatsapp://send?phone=${numero}&text=${textoEncoded}`;
+      const opened = window.open(appUrl, '_blank');
       setTimeout(() => {
-        window.location.href = `https://wa.me/${numero}?text=${textoEncoded}`;
-      }, 2000);
+        if (!opened || opened.closed) {
+          window.location.href = webUrl;
+        }
+      }, 1500);
       return;
     }
 
-    const appUrl = `whatsapp://send?phone=${numero}&text=${textoEncoded}`;
-    window.location.href = appUrl;
-
+    const opened = window.open(appUrl, '_blank');
+    
     const fallbackTimer = setTimeout(() => {
-      mostrarOpcionWeb(numero, textoEncoded);
-    }, 3000);
+      if (!opened || opened.closed) {
+        mostrarOpcionWeb(numero, textoEncoded);
+      }
+    }, 8000);
 
     window.addEventListener('blur', () => {
-      clearTimeout(fallbackTimer);
+      setTimeout(() => {
+        if (opened && !opened.closed) {
+          clearTimeout(fallbackTimer);
+        }
+      }, 1000);
     }, { once: true });
   };
 
