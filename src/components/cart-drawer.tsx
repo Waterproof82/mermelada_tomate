@@ -50,17 +50,15 @@ export function CartDrawer() {
 
   const abrirWhatsApp = (numero: string, mensaje: string) => {
     const textoEncoded = encodeURIComponent(mensaje);
-    const urlConMensaje = `https://wa.me/${numero}?text=${textoEncoded}`;
     const esMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
 
     if (esMobile) {
       window.location.href = `whatsapp://send?phone=${numero}&text=${textoEncoded}`;
       setTimeout(() => {
-        window.location.href = urlConMensaje;
+        window.location.href = `https://wa.me/${numero}?text=${textoEncoded}`;
       }, 2000);
     } else {
-      const urlSinMensaje = `https://wa.me/${numero}`;
-      const waWindow = window.open(urlSinMensaje, 'whatsapp_window');
+      window.open('https://web.whatsapp.com', 'whatsapp_window');
       let aviso = document.getElementById('whatsapp-aviso');
       if (!aviso) {
         aviso = document.createElement('div');
@@ -89,7 +87,7 @@ export function CartDrawer() {
 
       aviso.innerHTML = `
         <p style="margin: 0 0 12px; color: #333;">
-          ⏳ Cuando WhatsApp Web haya cargado, pulsa el botón para enviar el mensaje:
+          ⏳ Espera a que WhatsApp Web cargue completamente y pulsa el botón:
         </p>
         <button id="whatsapp-reintento-btn" style="
           background: #25D366;
@@ -118,13 +116,10 @@ export function CartDrawer() {
       aviso.style.display = 'block';
 
       document.getElementById('whatsapp-reintento-btn')?.addEventListener('click', () => {
-        try {
-          if (waWindow) {
-            waWindow.location.href = urlConMensaje;
-          }
-        } catch {
-          window.open(urlConMensaje, '_blank');
-        }
+        window.open(
+          `https://web.whatsapp.com/send?phone=${numero}&text=${textoEncoded}`,
+          'whatsapp_window'
+        );
         ocultarAviso();
       });
 
