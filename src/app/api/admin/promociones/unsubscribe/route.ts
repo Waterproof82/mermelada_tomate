@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const empresaId = searchParams.get('empresa');
 
     if (!email || !empresaId) {
-      return NextResponse.redirect(new URL('/?error=invalid_params', request.url));
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://mermeladadetomate.com'}/?error=invalid_params`);
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       .single();
 
     if (!cliente) {
-      return NextResponse.redirect(new URL('/?error=cliente_no_encontrado', request.url));
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://mermeladadetomate.com'}/?error=cliente_no_encontrado`);
     }
 
     const { data: empresa } = await supabase
@@ -70,10 +70,10 @@ export async function GET(request: Request) {
       }
     }
 
-    const baseUrl = empresa?.dominio ? `https://${empresa.dominio}` : '/';
-    return NextResponse.redirect(new URL(`/?baja=ok`, baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`));
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mermeladadetomate.com';
+    return NextResponse.redirect(`${baseUrl}/?baja=ok`);
   } catch (error) {
     console.error('Error processing unsubscribe:', error);
-    return NextResponse.redirect(new URL('/?error=internal', request.url));
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://mermeladadetomate.com'}/?error=internal`);
   }
 }
