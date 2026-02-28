@@ -212,12 +212,6 @@ export default function CategoriasPage() {
       return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     });
 
-  const getTraducciones = (cat: Category) => {
-    return [cat.nombre_en && 'EN', cat.nombre_fr && 'FR', cat.nombre_it && 'IT', cat.nombre_de && 'DE']
-      .filter(Boolean)
-      .join(', ') || '—';
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -289,9 +283,6 @@ export default function CategoriasPage() {
                   </div>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                  Traducciones
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                   Tipo
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
@@ -313,9 +304,6 @@ export default function CategoriasPage() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                     {cat.nombre_es}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {getTraducciones(cat)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     {cat.categoria_padre_id ? (
@@ -400,7 +388,7 @@ export default function CategoriasPage() {
                     ) : null}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {cat.categoria_padre_id && cat.parentName ? `Subcategoría de ${cat.parentName}` : getTraducciones(cat)}
+                    {cat.categoria_padre_id && cat.parentName ? `Subcategoría de ${cat.parentName}` : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

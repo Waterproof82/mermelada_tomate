@@ -140,8 +140,12 @@ export async function DELETE(request: Request) {
   }
 }
 
-export async function PUT() {
+export async function PUT(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const mesParam = searchParams.get('mes');
+    const añoParam = searchParams.get('año');
+
     const cookieStore = await cookies();
     const token = cookieStore.get('admin_token')?.value;
 
@@ -165,8 +169,13 @@ export async function PUT() {
     }
 
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const selectedMonth = mesParam !== null ? parseInt(mesParam) : now.getMonth();
+    const selectedYear = añoParam !== null ? parseInt(añoParam) : now.getFullYear();
+
+    const todayStart = new Date(selectedYear, selectedMonth, now.getDate()).toISOString();
+    const monthStart = new Date(selectedYear, selectedMonth, 1).toISOString();
+    const monthEnd = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59).toISOString();
+    const yearStart = new Date(selectedYear, 0, 1).toISOString();
 
     const { data: pedidos, error } = await supabase
       .from('pedidos')
@@ -177,11 +186,16 @@ export async function PUT() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const pedidosHoy = pedidos?.filter(p => new Date(p.created_at) >= new Date(todayStart)) || [];
-    const pedidosMes = pedidos?.filter(p => new Date(p.created_at) >= new Date(monthStart)) || [];
+    const pedidosHoy = pedidos?.filter(p => {
+      const fecha = new Date(p.created_at);
+      return fecha >= new Date(todayStart) && fecha <= new Date(monthEnd);
+    }) || [];
+    const pedidosMes = pedidos?.filter(p => new Date(p.created_at) >= new Date(monthStart) && new Date(p.created_at) <= new Date(monthEnd)) || [];
+    const pedidosAno = pedidos?.filter(p => new Date(p.created_at) >= new Date(yearStart)) || [];
 
     const totalHoy = pedidosHoy.reduce((sum, p) => sum + (p.total || 0), 0);
     const totalMes = pedidosMes.reduce((sum, p) => sum + (p.total || 0), 0);
+    const totalAno = pedidosAno.reduce((sum, p) => sum + (p.total || 0), 0);
 
     const dishCount: Record<string, { nombre: string; cantidad: number; total: number }> = {};
     pedidosMes.forEach(pedido => {
@@ -201,12 +215,34 @@ export async function PUT() {
       .sort((a, b) => b.cantidad - a.cantidad)
       .slice(0, 10);
 
+    // Top platos del año
+    const dishCountAno: Record<string, { nombre: string; cantidad: number; total: number }> = {};
+    pedidosAno.forEach(pedido => {
+      if (pedido.detalle_pedido) {
+        pedido.detalle_pedido.forEach((item: any) => {
+          const key = item.nombre;
+          if (!dishCountAno[key]) {
+            dishCountAno[key] = { nombre: item.nombre, cantidad: 0, total: 0 };
+          }
+          dishCountAno[key].cantidad += item.cantidad || 1;
+          dishCountAno[key].total += (item.precio * (item.cantidad || 1));
+        });
+      }
+    });
+
+    const topPlatosAno = Object.values(dishCountAno)
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .slice(0, 10);
+
     return NextResponse.json({
       pedidosHoy: pedidosHoy.length,
       pedidosMes: pedidosMes.length,
       totalHoy,
       totalMes,
+      totalAno,
       topPlatos,
+      topPlatosAno,
+      mesSeleccionado: `${selectedMonth}-${selectedYear}`,
     });
   } catch (error) {
     console.error('Error fetching statistics:', error);
