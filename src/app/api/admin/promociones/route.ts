@@ -128,8 +128,6 @@ export async function POST(request: Request) {
       console.log('BREVO_API_KEY configurado:', !!BREVO_API_KEY);
       
       if (emails && emails.length > 0) {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-        
         const emailHtml = `
 <!DOCTYPE html>
 <html>
@@ -152,7 +150,7 @@ export async function POST(request: Request) {
     </div>
     <div style="background-color: #f9f9f9; padding: 16px; text-align: center;">
       <p style="margin: 0; color: #888888; font-size: 12px;">
-        <a href="${baseUrl}/api/admin/promociones/unsubscribe?email=__EMAIL__&empresa=${perfil.empresa_id}" style="color: #008C45;">Gestionar preferencias de promociones</a>
+        <a href="/api/admin/promociones/unsubscribe?email=__EMAIL__&empresa=${perfil.empresa_id}" style="color: #008C45;">Gestionar preferencias de promociones</a>
       </p>
     </div>
   </div>
