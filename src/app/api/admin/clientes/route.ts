@@ -42,7 +42,26 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ clientes });
+    // Obtener número de pedidos por cliente
+    const { data: pedidos } = await supabase
+      .from('pedidos')
+      .select('cliente_id')
+      .eq('empresa_id', perfil.empresa_id);
+
+    const pedidosCount: Record<string, number> = {};
+    pedidos?.forEach(p => {
+      if (p.cliente_id) {
+        pedidosCount[p.cliente_id] = (pedidosCount[p.cliente_id] || 0) + 1;
+      }
+    });
+
+    // Añadir numero_pedidos a cada cliente y ordenar
+    const clientesConPedidos = clientes?.map(c => ({
+      ...c,
+      numero_pedidos: pedidosCount[c.id] || 0
+    })).sort((a, b) => b.numero_pedidos - a.numero_pedidos);
+
+    return NextResponse.json({ clientes: clientesConPedidos });
   } catch (error) {
     console.error('Error fetching clientes:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

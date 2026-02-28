@@ -1,3 +1,6 @@
+-- Add clientes_enviados column to promociones table
+ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS clientes_enviados JSONB DEFAULT '[]'::jsonb;
+
 -- Add RLS policies for promociones table
 ALTER TABLE public.promociones ENABLE ROW LEVEL SECURITY;
 

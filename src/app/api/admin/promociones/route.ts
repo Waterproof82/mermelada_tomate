@@ -38,7 +38,8 @@ export async function GET() {
       .from('promociones')
       .select('*')
       .eq('empresa_id', perfil.empresa_id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(1);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -95,7 +96,8 @@ export async function POST(request: Request) {
       .eq('aceptar_promociones', true)
       .not('email', 'is', null);
 
-    const numeroEnvios = clientesConPromo?.length || 0;
+    const emails = clientesConPromo?.map(c => c.email).filter(Boolean) || [];
+    const numeroEnvios = emails.length;
     console.log('Clientes con promociones:', numeroEnvios, clientesConPromo);
 
     // Eliminar promociones anteriores de esta empresa
