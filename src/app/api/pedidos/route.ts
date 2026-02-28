@@ -151,15 +151,6 @@ function generateOrderEmail(items: CartItem[], total: number, empresaNombre: str
   `.trim();
 }
 
-
-function parseMainDomain(domain: string): string {
-  const subdomainPedidos = 'pedidos';
-  const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
-  return isPedidos
-    ? domain.replace(/^pedidos\./, '').replace(/-pedidos$/, '')
-    : domain;
-}
-
 function validateOrderInputs(nombre: unknown, telefono: unknown, email?: string) {
   const sanitizedNombre = typeof nombre === 'string' ? nombre.trim().slice(0, 100) : '';
   const sanitizedTelefono = typeof telefono === 'string' ? telefono.replaceAll(/\D/g, '').slice(0, 15) : '';
