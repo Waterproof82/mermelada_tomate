@@ -135,11 +135,21 @@ export async function POST(request: Request) {
       ? domain.replace(/^pedidos\./, '').replace(/-pedidos$/, '')
       : domain;
 
-    const { data: empresa } = await supabase
+    let { data: empresa } = await supabase
       .from('empresas')
       .select('email_notification, email, nombre')
       .eq('dominio', mainDomain)
       .single();
+
+    // Si no encuentra, buscar por subdomain_pedidos
+    if (!empresa && isPedidos) {
+      const { data: empresaSubdomain } = await supabase
+        .from('empresas')
+        .select('email_notification, email, nombre')
+        .eq('subdomain_pedidos', true)
+        .single();
+      if (empresaSubdomain) empresa = empresaSubdomain;
+    }
 
     if (!empresa) {
       return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 });

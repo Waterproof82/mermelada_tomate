@@ -40,6 +40,14 @@ function generateWhatsAppMessage(items: CartItem[], total: number, nombre: strin
   return mensaje;
 }
 
+function parseMainDomain(domain: string): string {
+  const subdomainPedidos = 'pedidos';
+  const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
+  return isPedidos
+    ? domain.replace(/^pedidos\./, '').replace(/-pedidos$/, '')
+    : domain;
+}
+
 async function getDomainFromHeaders(): Promise<string> {
   const headersList = await headers();
   const host = headersList.get('host');
@@ -310,11 +318,25 @@ export async function POST(request: Request) {
     
     console.log('DEBUG: domain:', domain, 'mainDomain:', mainDomain);
 
-    const { data: empresa } = await supabase
+    let { data: empresa, error: empresaError } = await supabase
       .from('empresas')
       .select('id, nombre, email_notification, telefono_whatsapp')
       .eq('dominio', mainDomain)
       .single();
+
+    // Si no encuentra, buscar por subdomain_pedidos
+    if (empresaError || !empresa) {
+      const subdomainPedidos = 'pedidos';
+      const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
+      if (isPedidos) {
+        const { data: empresaSubdomain } = await supabase
+          .from('empresas')
+          .select('id, nombre, email_notification, telefono_whatsapp')
+          .eq('subdomain_pedidos', true)
+          .single();
+        if (empresaSubdomain) empresa = empresaSubdomain;
+      }
+    }
 
     if (!empresa) {
       return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 });

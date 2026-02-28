@@ -79,8 +79,19 @@ function mapTranslations(data: any, prefix: string) {
     : null;
 }
 
+function parseMainDomain(domain: string): string {
+  const subdomainPedidos = 'pedidos';
+  const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
+  return isPedidos
+    ? domain.replace(/^pedidos\./, '').replace(/-pedidos$/, '')
+    : domain;
+}
+
 export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | null> {
-  const { data, error } = await supabase
+  const mainDomain = parseMainDomain(domain);
+  
+  // Buscar primero por dominio exacto
+  let { data, error } = await supabase
     .from("empresas")
     .select(`
       id, nombre, dominio, mostrar_carrito, moneda, subdomain_pedidos, 
@@ -90,11 +101,33 @@ export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | 
       descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de,
       titulo, subtitulo,
       subtitulo2_es, subtitulo2_en, subtitulo2_fr, subtitulo2_it, subtitulo2_de,
-      footer1_es, footer1_en, footer1_fr, footer1_it, footer1_de,
-      footer2_es, footer2_en, footer2_fr, footer2_it, footer2_de
+      footer1_es, footer1_en, footer1_fr, footer1_it, footer1_de
     `)
-    .ilike("dominio", domain)
+    .eq("dominio", mainDomain)
     .maybeSingle();
+
+  // Si no encuentra, buscar por subdominio
+  if (!data) {
+    const subdomainPedidos = 'pedidos';
+    const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
+    if (isPedidos) {
+      const { data: subdomainData } = await supabase
+        .from("empresas")
+        .select(`
+          id, nombre, dominio, mostrar_carrito, moneda, subdomain_pedidos, 
+          logo_url, url_image, 
+          color_primary, color_primary_foreground, color_secondary, color_secondary_foreground,
+          color_accent, color_accent_foreground, color_background, color_foreground,
+          descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de,
+          titulo, subtitulo,
+          subtitulo2_es, subtitulo2_en, subtitulo2_fr, subtitulo2_it, subtitulo2_de
+        `)
+        .eq("subdomain_pedidos", true)
+        .maybeSingle();
+      
+      if (subdomainData) data = subdomainData;
+    }
+  }
 
   if (error || !data) return null;
 
