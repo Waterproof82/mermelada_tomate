@@ -11,6 +11,7 @@ interface Cliente {
   telefono: string | null;
   direccion: string | null;
   aceptar_promociones: boolean | null;
+  numero_pedidos?: number;
   created_at: string;
 }
 
@@ -238,6 +239,7 @@ export default function ClientesPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Teléfono</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Dirección</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Pedidos</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Fecha</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">Promociones</th>
                   <th className="px-4 py-3"></th>
@@ -277,6 +279,11 @@ export default function ClientesPage() {
                           {cliente.direccion || '-'}
                         </span>
                       </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-flex items-center justify-center px-2 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                        {cliente.numero_pedidos || 0}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-sm">
                       {cliente.created_at ? new Date(cliente.created_at).toLocaleDateString('es-ES') : '-'}

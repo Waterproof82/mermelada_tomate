@@ -177,59 +177,37 @@ function validateOrderInputs(nombre: unknown, telefono: unknown, email?: string)
 
 
 
-async function upsertClienteByEmail(supabase: any, empresaId: string, nombre: string, telefono: string, email: string): Promise<string | null> {
+async function upsertClienteByTelefono(supabase: any, empresaId: string, nombre: string, telefono: string, email?: string): Promise<string | null> {
+  // Buscar cliente existente por teléfono
   const { data: existingCliente } = await supabase
     .from('clientes')
-    .select('id')
-    .eq('empresa_id', empresaId)
-    .eq('email', email)
-    .single();
-  if (existingCliente) {
-    await supabase
-      .from('clientes')
-      .update({ nombre, telefono })
-      .eq('id', existingCliente.id);
-    return existingCliente.id;
-  } else {
-    const { data: newCliente, error: clienteError } = await supabase
-      .from('clientes')
-      .insert({
-        empresa_id: empresaId,
-        email,
-        nombre,
-        telefono,
-        aceptar_promociones: true,
-      })
-      .select('id')
-      .single();
-    if (!clienteError && newCliente) {
-      return newCliente.id;
-    }
-  }
-  return null;
-}
-
-async function upsertClienteByTelefono(supabase: any, empresaId: string, nombre: string, telefono: string): Promise<string | null> {
-  const { data: existingCliente } = await supabase
-    .from('clientes')
-    .select('id')
+    .select('id, email, nombre')
     .eq('empresa_id', empresaId)
     .eq('telefono', telefono)
-    .is('email', null)
     .single();
+  
   if (existingCliente) {
-    await supabase
-      .from('clientes')
-      .update({ nombre })
-      .eq('id', existingCliente.id);
+    // Actualizar solo nombre y email (si no está vacío)
+    const updates: any = {};
+    if (nombre) updates.nombre = nombre;
+    if (email) updates.email = email;
+    
+    if (Object.keys(updates).length > 0) {
+      await supabase
+        .from('clientes')
+        .update(updates)
+        .eq('id', existingCliente.id);
+    }
     return existingCliente.id;
   } else {
+    // Crear nuevo cliente
     const { data: newCliente, error: clienteError } = await supabase
       .from('clientes')
       .insert({
         empresa_id: empresaId,
-        nombre,
-        telefono,
+        nombre: nombre || null,
+        telefono: telefono,
+        email: email || null,
       })
       .select('id')
       .single();
@@ -241,15 +219,11 @@ async function upsertClienteByTelefono(supabase: any, empresaId: string, nombre:
 }
 
 async function upsertCliente(supabase: any, empresaId: string, nombre: string, telefono: string, email?: string | null): Promise<string | null> {
-  if (email) {
-    return upsertClienteByEmail(supabase, empresaId, nombre, telefono, email);
-  } else if (telefono) {
-    return upsertClienteByTelefono(supabase, empresaId, nombre, telefono);
-  }
-  return null;
+  // Siempre buscar por teléfono primero
+  return upsertClienteByTelefono(supabase, empresaId, nombre, telefono, email || undefined);
 }
 
-async function createPedido(supabase: any, empresaId: string, clienteId: string | null, items: CartItem[], total: number) {
+async function createPedido(supabase: any, empresaId: string, clienteId: string | null, telefono: string, items: CartItem[], total: number) {
   const { data: lastOrder } = await supabase
     .from('pedidos')
     .select('numero_pedido')
@@ -264,6 +238,7 @@ async function createPedido(supabase: any, empresaId: string, clienteId: string 
       empresa_id: empresaId,
       numero_pedido: nuevoNumeroPedido,
       cliente_id: clienteId,
+      telefono: telefono,
       detalle_pedido: items.map(ci => ({
         producto_id: ci.item.id,
         nombre: ci.item.name,
@@ -362,7 +337,7 @@ export async function POST(request: Request) {
 
     const clienteId = await upsertCliente(supabase, empresa.id, sanitizedNombre, sanitizedTelefono, sanitizedEmail);
 
-    const { pedidoError, nuevoNumeroPedido } = await createPedido(supabase, empresa.id, clienteId, items, total);
+    const { pedidoError, nuevoNumeroPedido } = await createPedido(supabase, empresa.id, clienteId, sanitizedTelefono, items, total);
     if (pedidoError) {
       console.error('Error guardando pedido:', pedidoError);
       return NextResponse.json({ error: 'Error guardando pedido' }, { status: 500 });
