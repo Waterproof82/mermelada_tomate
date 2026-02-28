@@ -167,6 +167,7 @@ export async function PUT() {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const yearStart = new Date(now.getFullYear(), 0, 1).toISOString();
 
     const { data: pedidos, error } = await supabase
       .from('pedidos')
@@ -179,9 +180,11 @@ export async function PUT() {
 
     const pedidosHoy = pedidos?.filter(p => new Date(p.created_at) >= new Date(todayStart)) || [];
     const pedidosMes = pedidos?.filter(p => new Date(p.created_at) >= new Date(monthStart)) || [];
+    const pedidosAno = pedidos?.filter(p => new Date(p.created_at) >= new Date(yearStart)) || [];
 
     const totalHoy = pedidosHoy.reduce((sum, p) => sum + (p.total || 0), 0);
     const totalMes = pedidosMes.reduce((sum, p) => sum + (p.total || 0), 0);
+    const totalAno = pedidosAno.reduce((sum, p) => sum + (p.total || 0), 0);
 
     const dishCount: Record<string, { nombre: string; cantidad: number; total: number }> = {};
     pedidosMes.forEach(pedido => {
@@ -206,6 +209,7 @@ export async function PUT() {
       pedidosMes: pedidosMes.length,
       totalHoy,
       totalMes,
+      totalAno,
       topPlatos,
     });
   } catch (error) {

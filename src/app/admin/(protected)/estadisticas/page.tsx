@@ -12,6 +12,7 @@ interface Stats {
   pedidosMes: number;
   totalHoy: number;
   totalMes: number;
+  totalAno: number;
   topPlatos: { nombre: string; cantidad: number; total: number }[];
 }
 
@@ -71,7 +72,7 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
         Resumen de pedidos y facturación
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <motion.div
           key={`kpi-1-${mountKey}`}
           initial={{ opacity: 0, y: 20 }}
@@ -171,6 +172,31 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
             </div>
           </div>
         </motion.div>
+
+        <motion.div
+          key={`kpi-5-${mountKey}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Ventas año</p>
+              <motion.p 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.55, duration: 0.3 }}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              >
+                {(stats?.totalAno || 0).toFixed(2)}€
+              </motion.p>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -191,9 +217,9 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   key={`bar-${mountKey}`}
-                  data={stats.topPlatos.slice(0, 10)} 
+                  data={stats.topPlatos.slice(0, 8)} 
                   layout="vertical"
-                  margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+                  margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
                   <XAxis type="number" stroke="#9CA3AF" />
@@ -201,8 +227,9 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
                     dataKey="nombre" 
                     type="category" 
                     stroke="#9CA3AF" 
-                    width={75}
+                    width={110}
                     tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    tickLine={false}
                   />
                   <Tooltip 
                     contentStyle={tooltipStyle}
@@ -213,10 +240,10 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
                     radius={[0, 4, 4, 0]}
                     animationDuration={1500}
                   >
-                    {stats.topPlatos.slice(0, 10).map((_, index) => (
+                    {stats.topPlatos.slice(0, 8).map((_, index) => (
                       <Cell 
                         key={`cell-${index}`} 
-                        fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16', '#06B6D4', '#A855F7'][index % 10]} 
+                        fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8]} 
                       />
                     ))}
                   </Bar>
@@ -248,7 +275,7 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart key={`pie-${mountKey}`}>
                     <Pie
-                      data={stats.topPlatos.slice(0, 10)}
+                      data={stats.topPlatos.slice(0, 8)}
                       cx="50%"
                       cy="50%"
                       innerRadius={50}
@@ -258,10 +285,10 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
                       nameKey="nombre"
                       animationDuration={1500}
                     >
-                      {stats.topPlatos.slice(0, 10).map((_, index) => (
+                      {stats.topPlatos.slice(0, 8).map((_, index) => (
                         <Cell 
                           key={`cell-${index}`} 
-                          fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16', '#06B6D4', '#A855F7'][index % 10]} 
+                          fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8]} 
                         />
                       ))}
                     </Pie>
@@ -273,11 +300,11 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
                 </ResponsiveContainer>
               </div>
               <div className="flex flex-wrap justify-center gap-3 mt-2 px-2">
-                {stats.topPlatos.slice(0, 10).map((plato, index) => (
+                {stats.topPlatos.slice(0, 8).map((plato, index) => (
                   <div key={plato.nombre} className="flex items-center gap-2">
                     <div 
                       className="w-3 h-3 rounded-full shrink-0"
-                      style={{ backgroundColor: ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16', '#06B6D4', '#A855F7'][index % 10] }}
+                      style={{ backgroundColor: ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8] }}
                     />
                     <span className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[100px]">{plato.nombre}</span>
                   </div>
