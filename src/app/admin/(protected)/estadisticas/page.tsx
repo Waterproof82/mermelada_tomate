@@ -14,6 +14,7 @@ interface Stats {
   totalMes: number;
   totalAno: number;
   topPlatos: { nombre: string; cantidad: number; total: number }[];
+  topPlatosAno: { nombre: string; cantidad: number; total: number }[];
   mesSeleccionado: string;
 }
 
@@ -324,7 +325,7 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
         >
           <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
             <Euro className="w-5 h-5" />
-            Ingresos por plato
+            Ingresos por plato (este mes)
           </h2>
           
           {stats?.topPlatos && stats.topPlatos.length > 0 ? (
@@ -369,6 +370,65 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
                 ))}
               </div>
             </>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+              No hay datos suficientes para mostrar estadísticas
+            </p>
+          )}
+        </motion.div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <motion.div 
+          key={`chart-bar-ano-${mountKey}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 1.0 }}
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 lg:col-span-2"
+        >
+          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Platos más pedidos (este año)
+          </h2>
+          
+          {stats?.topPlatosAno && stats.topPlatosAno.length > 0 ? (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  key={`bar-ano-${mountKey}`}
+                  data={stats.topPlatosAno.slice(0, 8)} 
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                  <XAxis type="number" stroke="#9CA3AF" />
+                  <YAxis 
+                    dataKey="nombre" 
+                    type="category" 
+                    stroke="#9CA3AF" 
+                    width={110}
+                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    tickLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={tooltipStyle}
+                    formatter={(value: number) => [`${value} uds`, 'Cantidad']}
+                  />
+                  <Bar 
+                    dataKey="cantidad" 
+                    radius={[0, 4, 4, 0]}
+                    animationDuration={1500}
+                  >
+                    {stats.topPlatosAno.slice(0, 8).map((_, index) => (
+                      <Cell 
+                        key={`cell-ano-${index}`} 
+                        fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8]} 
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
             <p className="text-gray-500 dark:text-gray-400 text-center py-8">
               No hay datos suficientes para mostrar estadísticas

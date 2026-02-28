@@ -215,6 +215,25 @@ export async function PUT(request: Request) {
       .sort((a, b) => b.cantidad - a.cantidad)
       .slice(0, 10);
 
+    // Top platos del año
+    const dishCountAno: Record<string, { nombre: string; cantidad: number; total: number }> = {};
+    pedidosAno.forEach(pedido => {
+      if (pedido.detalle_pedido) {
+        pedido.detalle_pedido.forEach((item: any) => {
+          const key = item.nombre;
+          if (!dishCountAno[key]) {
+            dishCountAno[key] = { nombre: item.nombre, cantidad: 0, total: 0 };
+          }
+          dishCountAno[key].cantidad += item.cantidad || 1;
+          dishCountAno[key].total += (item.precio * (item.cantidad || 1));
+        });
+      }
+    });
+
+    const topPlatosAno = Object.values(dishCountAno)
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .slice(0, 10);
+
     return NextResponse.json({
       pedidosHoy: pedidosHoy.length,
       pedidosMes: pedidosMes.length,
@@ -222,6 +241,7 @@ export async function PUT(request: Request) {
       totalMes,
       totalAno,
       topPlatos,
+      topPlatosAno,
       mesSeleccionado: `${selectedMonth}-${selectedYear}`,
     });
   } catch (error) {
