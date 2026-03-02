@@ -8,7 +8,7 @@ export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   const path = request.nextUrl.pathname;
 
-  // Rutas de API admin - verificar JWT
+  // 1. Rutas de API admin - verificar JWT
   if (path.startsWith('/api/admin') && path !== '/api/admin/login') {
     const adminToken = request.cookies.get('admin_token')?.value;
 
@@ -29,18 +29,7 @@ export async function proxy(request: NextRequest) {
 
     try {
       const secret = new TextEncoder().encode(ADMIN_TOKEN_SECRET);
-      const { payload } = await jwtVerify(adminToken, secret);
-      
-      const requestHeaders = new Headers(request.headers);
-      requestHeaders.set('x-empresa-id', payload.empresaId as string);
-      requestHeaders.set('x-admin-id', payload.adminId as string);
-      requestHeaders.set('x-admin-rol', payload.rol as string);
-
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      });
+      await jwtVerify(adminToken, secret);
     } catch {
       return NextResponse.json(
         { error: 'Token inválido o expirado' },
@@ -49,23 +38,20 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Manejo de access token para el carrito (lógica existente)
+  // 2. Manejo de access token para el carrito
   const accessToken = url.searchParams.get('access');
 
   if (accessToken) {
     const sanitizedToken = accessToken.replaceAll(/[^a-zA-Z0-9._-]/g, '');
 
-    console.log('Proxy: Access token found in URL');
-
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
 
     if (!secretKey) {
-        console.error('Proxy: ACCESS_TOKEN_SECRET is missing!');
-        return NextResponse.next();
+      return NextResponse.next();
     }
-    const secret = new TextEncoder().encode(secretKey);
     
     try {
+      const secret = new TextEncoder().encode(secretKey);
       const { payload } = await jwtVerify(sanitizedToken, secret);
       
       url.searchParams.delete('access');
