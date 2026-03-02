@@ -20,7 +20,7 @@ const createProductBodySchema = z.object({
   precio: z.union([z.number(), z.string()]).refine(val => !isNaN(parseFloat(String(val))), {
     message: "El precio debe ser un número válido",
   }).transform(val => parseFloat(String(val))),
-  foto_url: z.string().url().optional().nullable(),
+  foto_url: z.union([z.string().url(), z.literal("")]).optional().nullable(),
   categoria_id: z.string().uuid().nullable().optional(),
   es_especial: z.boolean().default(false),
   activo: z.boolean().default(true),
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       descripcion_it: parsed.data.descripcion_it || null,
       descripcion_de: parsed.data.descripcion_de || null,
       precio: parsed.data.precio,
-      foto_url: parsed.data.foto_url || null,
+      foto_url: parsed.data.foto_url === "" ? null : (parsed.data.foto_url || null),
       categoria_id: parsed.data.categoria_id || null,
       es_especial: parsed.data.es_especial,
       activo: parsed.data.activo,
@@ -121,15 +121,21 @@ export async function PUT(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const idParam = searchParams.get('id');
 
+  console.log('DEBUG PUT productos - idParam:', idParam);
+
   const idParsed = queryIdSchema.safeParse({ id: idParam });
   if (!idParsed.success) {
+    console.log('DEBUG PUT productos - idParsed error:', idParsed.error);
     return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
   }
 
   const body = await request.json();
+  console.log('DEBUG PUT productos - body:', body);
+  
   const parsed = updateProductBodySchema.safeParse(body);
 
   if (!parsed.success) {
+    console.log('DEBUG PUT productos - parse error:', parsed.error);
     return NextResponse.json(
       { error: parsed.error.errors[0].message },
       { status: 400 }
@@ -151,7 +157,7 @@ export async function PUT(request: NextRequest) {
   if (parsed.data.descripcion_de !== undefined) updateData.descripcion_de = parsed.data.descripcion_de;
   if (parsed.data.precio !== undefined) updateData.precio = parsed.data.precio;
   if (parsed.data.foto_url !== undefined) {
-    updateData.foto_url = parsed.data.foto_url;
+    updateData.foto_url = parsed.data.foto_url === "" ? null : parsed.data.foto_url;
   }
   if (parsed.data.categoria_id !== undefined) updateData.categoria_id = parsed.data.categoria_id;
   if (parsed.data.es_especial !== undefined) updateData.es_especial = parsed.data.es_especial;
