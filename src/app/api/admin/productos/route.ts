@@ -1,34 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 
-const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
+const queryIdSchema = z.object({
+  id: z.string().uuid(),
+});
 
-async function getAdminEmpresaId() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('admin_token')?.value;
+const createProductBodySchema = z.object({
+  titulo_es: z.string().min(1, "El título es requerido"),
+  titulo_en: z.string().optional(),
+  titulo_fr: z.string().optional(),
+  titulo_it: z.string().optional(),
+  titulo_de: z.string().optional(),
+  descripcion_es: z.string().optional(),
+  descripcion_en: z.string().optional(),
+  descripcion_fr: z.string().optional(),
+  descripcion_it: z.string().optional(),
+  descripcion_de: z.string().optional(),
+  precio: z.union([z.number(), z.string()]).refine(val => !isNaN(parseFloat(String(val))), {
+    message: "El precio debe ser un número válido",
+  }).transform(val => parseFloat(String(val))),
+  foto_url: z.string().url().optional(),
+  categoria_id: z.string().uuid().nullable().optional(),
+  es_especial: z.boolean().default(false),
+  activo: z.boolean().default(true),
+});
 
-  if (!token) return null;
+const updateProductBodySchema = createProductBodySchema.partial();
 
-  try {
-    const secret = new TextEncoder().encode(ADMIN_TOKEN_SECRET);
-    const { payload } = await jwtVerify(token, secret);
-    return payload.empresaId as string;
-  } catch {
-    return null;
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Configuración de Supabase incompleta");
   }
+  
+  return createClient(supabaseUrl, supabaseKey);
 }
 
-export async function GET() {
-  const empresaId = await getAdminEmpresaId();
+function getEmpresaId(request: NextRequest): string | null {
+  return request.headers.get('x-empresa-id');
+}
+
+export async function GET(request: NextRequest) {
+  const empresaId = getEmpresaId(request);
   if (!empresaId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('productos')
@@ -44,45 +65,42 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
+  const empresaId = getEmpresaId(request);
   if (!empresaId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
   const body = await request.json();
-  const {
-    titulo_es, titulo_en, titulo_fr, titulo_it, titulo_de,
-    descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de,
-    precio, foto_url, categoria_id, es_especial, activo
-  } = body;
+  const parsed = createProductBodySchema.safeParse(body);
 
-  if (!titulo_es || !precio) {
-    return NextResponse.json({ error: 'Título y precio son requeridos' }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0].message },
+      { status: 400 }
+    );
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('productos')
     .insert({
       empresa_id: empresaId,
-      titulo_es,
-      titulo_en: titulo_en || null,
-      titulo_fr: titulo_fr || null,
-      titulo_it: titulo_it || null,
-      titulo_de: titulo_de || null,
-      descripcion_es: descripcion_es || null,
-      descripcion_en: descripcion_en || null,
-      descripcion_fr: descripcion_fr || null,
-      descripcion_it: descripcion_it || null,
-      descripcion_de: descripcion_de || null,
-      precio: parseFloat(precio),
-      foto_url: foto_url || null,
-      categoria_id: categoria_id || null,
-      es_especial: es_especial || false,
-      activo: activo !== false,
+      titulo_es: parsed.data.titulo_es,
+      titulo_en: parsed.data.titulo_en || null,
+      titulo_fr: parsed.data.titulo_fr || null,
+      titulo_it: parsed.data.titulo_it || null,
+      titulo_de: parsed.data.titulo_de || null,
+      descripcion_es: parsed.data.descripcion_es || null,
+      descripcion_en: parsed.data.descripcion_en || null,
+      descripcion_fr: parsed.data.descripcion_fr || null,
+      descripcion_it: parsed.data.descripcion_it || null,
+      descripcion_de: parsed.data.descripcion_de || null,
+      precio: parsed.data.precio,
+      foto_url: parsed.data.foto_url || null,
+      categoria_id: parsed.data.categoria_id || null,
+      es_especial: parsed.data.es_especial,
+      activo: parsed.data.activo,
     })
     .select()
     .single();
@@ -95,49 +113,52 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
+  const empresaId = getEmpresaId(request);
   if (!empresaId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const idParam = searchParams.get('id');
 
-  if (!id) {
-    return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+  const idParsed = queryIdSchema.safeParse({ id: idParam });
+  if (!idParsed.success) {
+    return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
   }
 
   const body = await request.json();
-  const {
-    titulo_es, titulo_en, titulo_fr, titulo_it, titulo_de,
-    descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de,
-    precio, foto_url, categoria_id, es_especial, activo
-  } = body;
+  const parsed = updateProductBodySchema.safeParse(body);
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0].message },
+      { status: 400 }
+    );
+  }
+
+  const supabase = getSupabaseClient();
+
+  const updateData: Record<string, unknown> = {};
+  if (parsed.data.titulo_es !== undefined) updateData.titulo_es = parsed.data.titulo_es;
+  if (parsed.data.titulo_en !== undefined) updateData.titulo_en = parsed.data.titulo_en;
+  if (parsed.data.titulo_fr !== undefined) updateData.titulo_fr = parsed.data.titulo_fr;
+  if (parsed.data.titulo_it !== undefined) updateData.titulo_it = parsed.data.titulo_it;
+  if (parsed.data.titulo_de !== undefined) updateData.titulo_de = parsed.data.titulo_de;
+  if (parsed.data.descripcion_es !== undefined) updateData.descripcion_es = parsed.data.descripcion_es;
+  if (parsed.data.descripcion_en !== undefined) updateData.descripcion_en = parsed.data.descripcion_en;
+  if (parsed.data.descripcion_fr !== undefined) updateData.descripcion_fr = parsed.data.descripcion_fr;
+  if (parsed.data.descripcion_it !== undefined) updateData.descripcion_it = parsed.data.descripcion_it;
+  if (parsed.data.descripcion_de !== undefined) updateData.descripcion_de = parsed.data.descripcion_de;
+  if (parsed.data.precio !== undefined) updateData.precio = parsed.data.precio;
+  if (parsed.data.foto_url !== undefined) updateData.foto_url = parsed.data.foto_url;
+  if (parsed.data.categoria_id !== undefined) updateData.categoria_id = parsed.data.categoria_id;
+  if (parsed.data.es_especial !== undefined) updateData.es_especial = parsed.data.es_especial;
+  if (parsed.data.activo !== undefined) updateData.activo = parsed.data.activo;
 
   const { data, error } = await supabase
     .from('productos')
-    .update({
-      titulo_es,
-      titulo_en: titulo_en || null,
-      titulo_fr: titulo_fr || null,
-      titulo_it: titulo_it || null,
-      titulo_de: titulo_de || null,
-      descripcion_es: descripcion_es || null,
-      descripcion_en: descripcion_en || null,
-      descripcion_fr: descripcion_fr || null,
-      descripcion_it: descripcion_it || null,
-      descripcion_de: descripcion_de || null,
-      precio: parseFloat(precio),
-      foto_url: foto_url || null,
-      categoria_id: categoria_id || null,
-      es_especial: es_especial || false,
-      activo: activo !== false,
-    })
-    .eq('id', id)
+    .update(updateData)
+    .eq('id', idParsed.data.id)
     .eq('empresa_id', empresaId)
     .select()
     .single();
@@ -150,26 +171,25 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
+  const empresaId = getEmpresaId(request);
   if (!empresaId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const idParam = searchParams.get('id');
 
-  if (!id) {
-    return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+  const idParsed = queryIdSchema.safeParse({ id: idParam });
+  if (!idParsed.success) {
+    return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseClient();
 
   const { error } = await supabase
     .from('productos')
     .delete()
-    .eq('id', id)
+    .eq('id', idParsed.data.id)
     .eq('empresa_id', empresaId);
 
   if (error) {
