@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useLanguage } from "@/lib/language-context"
 import { t } from "@/lib/translations"
 import type { EmpresaInfo } from "@/lib/server-services"
@@ -21,10 +22,13 @@ export function SiteFooter({ empresa }: SiteFooterProps) {
       <div className="mx-auto max-w-6xl px-4 py-10 md:px-6">
         <div className="flex flex-col items-center gap-6 text-center">
           {logoUrl && (
-            <img
+            <Image
               src={logoUrl}
               alt={empresa?.nombre ?? "Logo"}
+              width={100}
+              height={64}
               className="h-16 w-auto opacity-80"
+              unoptimized
             />
           )}
           {footer1 && (

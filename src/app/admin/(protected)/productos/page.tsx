@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Plus, Pencil, Trash2, X, Loader2, Image as ImageIcon, Search, ArrowUpDown, ArrowUp, ArrowDown, Languages, ChevronDown, ChevronRight } from 'lucide-react';
 import { ImageUploader } from '@/components/ui/image-uploader';
 import { useAdmin } from '@/lib/admin-context';
@@ -366,10 +367,13 @@ export default function ProductosPage() {
                 <tr key={prod.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-4 py-3 whitespace-nowrap">
                     {prod.foto_url ? (
-                      <img 
+                      <Image 
                         src={prod.foto_url} 
                         alt={prod.titulo_es}
+                        width={40}
+                        height={40}
                         className="h-10 w-10 rounded-md object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="h-10 w-10 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
@@ -441,10 +445,13 @@ export default function ProductosPage() {
               <div className="flex gap-3">
                 <div className="flex-shrink-0">
                   {prod.foto_url ? (
-                    <img 
+                    <Image 
                       src={prod.foto_url} 
                       alt={prod.titulo_es}
+                      width={64}
+                      height={64}
                       className="h-16 w-16 rounded-md object-cover"
+                      unoptimized
                     />
                   ) : (
                     <div className="h-16 w-16 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
