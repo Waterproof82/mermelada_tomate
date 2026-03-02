@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { BarChart3, ShoppingCart, Euro, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { motion } from 'framer-motion';
-import { useTheme } from 'next-themes';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 
 interface Stats {
   pedidosHoy: number;
@@ -18,38 +16,12 @@ interface Stats {
   mesSeleccionado: string;
 }
 
-const meses = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
+const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-function getInitialMonth(): { mes: number; año: number } {
-  const now = new Date();
-  return { mes: now.getMonth(), año: now.getFullYear() };
-}
-
-function EstadisticasContent({ mountKey }: { mountKey: number }) {
+export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: number }>) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const { theme } = useTheme();
-  const [chartKey, setChartKey] = useState(0);
-  const [selectedMonth, setSelectedMonth] = useState(getInitialMonth());
-
-  useEffect(() => {
-    if (stats) {
-      setChartKey(prev => prev + 1);
-    }
-  }, [stats]);
-
-  const isDark = theme === 'dark';
-
-  const tooltipStyle = {
-    backgroundColor: isDark ? '#1F2937' : '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    color: isDark ? '#fff' : '#1F2937',
-    boxShadow: isDark ? '0 4px 6px rgba(0,0,0,0.3)' : '0 4px 6px rgba(0,0,0,0.1)'
-  };
+  const [selectedMonth, setSelectedMonth] = useState({ mes: new Date().getMonth(), año: new Date().getFullYear() });
 
   useEffect(() => {
     async function fetchStats() {
@@ -166,7 +138,7 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
         >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <BarChart3 className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Pedidos mes</p>
@@ -186,12 +158,12 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
           key={`kpi-3-${mountKey}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
           className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-              <Euro className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <Euro className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Ventas hoy</p>
@@ -248,7 +220,7 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
               <motion.p 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.55, duration: 0.3 }}
+                transition={{ delay: 0.6, duration: 0.3 }}
                 className="text-2xl font-bold text-gray-900 dark:text-white"
               >
                 {(stats?.totalAno || 0).toFixed(2)}€
@@ -263,45 +235,38 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
           key={`chart-bar-${mountKey}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
           className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6"
         >
           <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            Platos más pedidos (este mes)
+            <ShoppingCart className="w-5 h-5" />
+            Top platos (este mes)
           </h2>
           
           {stats?.topPlatos && stats.topPlatos.length > 0 ? (
-            <div className="h-80">
+            <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  key={`bar-${mountKey}`}
-                  data={stats.topPlatos.slice(0, 8)} 
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-                  <XAxis type="number" stroke="#9CA3AF" />
+                <BarChart data={stats.topPlatos.slice(0, 8)} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" hide />
                   <YAxis 
-                    dataKey="nombre" 
                     type="category" 
-                    stroke="#9CA3AF" 
-                    width={110}
-                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                    tickLine={false}
+                    dataKey="nombre" 
+                    width={100}
+                    tick={{ fontSize: 12 }}
+                    style={{ fill: 'currentColor' }}
                   />
                   <Tooltip 
-                    contentStyle={tooltipStyle}
-                    formatter={(value: number) => [`${value} uds`, 'Cantidad']}
+                    contentStyle={{ 
+                      backgroundColor: 'var(--tooltip-bg, #fff)', 
+                      border: '1px solid var(--tooltip-border, #e5e7eb)',
+                      borderRadius: '8px'
+                    }}
                   />
-                  <Bar 
-                    dataKey="cantidad" 
-                    radius={[0, 4, 4, 0]}
-                    animationDuration={1500}
-                  >
-                    {stats.topPlatos.slice(0, 8).map((_, index) => (
+                  <Bar dataKey="cantidad" radius={[0, 4, 4, 0]} animationDuration={1500}>
+                    {stats.topPlatos.slice(0, 8).map((plato, index) => (
                       <Cell 
-                        key={`cell-${index}`} 
+                        key={`${plato.nombre}-bar`} 
                         fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8]} 
                       />
                     ))}
@@ -344,28 +309,32 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
                       nameKey="nombre"
                       animationDuration={1500}
                     >
-                      {stats.topPlatos.slice(0, 8).map((_, index) => (
+                      {stats.topPlatos.slice(0, 8).map((plato, index) => (
                         <Cell 
-                          key={`cell-${index}`} 
+                          key={`${plato.nombre}-pie`} 
                           fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8]} 
                         />
                       ))}
                     </Pie>
                     <Tooltip 
-                      contentStyle={tooltipStyle}
-                      formatter={(value: number) => [`${value.toFixed(2)}€`, 'Ingreso']}
+                      formatter={(value: number) => `${value.toFixed(2)}€`}
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px'
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex flex-wrap justify-center gap-3 mt-2 px-2">
-                {stats.topPlatos.slice(0, 8).map((plato, index) => (
-                  <div key={plato.nombre} className="flex items-center gap-2">
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {stats.topPlatos.slice(0, 6).map((plato, index) => (
+                  <div key={plato.nombre} className="flex items-center gap-2 text-sm">
                     <div 
-                      className="w-3 h-3 rounded-full shrink-0"
-                      style={{ backgroundColor: ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8] }}
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6'][index % 6] }}
                     />
-                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[100px]">{plato.nombre}</span>
+                    <span className="truncate text-gray-600 dark:text-gray-300">{plato.nombre}</span>
                   </div>
                 ))}
               </div>
@@ -377,78 +346,6 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
           )}
         </motion.div>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <motion.div 
-          key={`chart-bar-ano-${mountKey}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 1.0 }}
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 lg:col-span-2"
-        >
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            Platos más pedidos (este año)
-          </h2>
-          
-          {stats?.topPlatosAno && stats.topPlatosAno.length > 0 ? (
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  key={`bar-ano-${mountKey}`}
-                  data={stats.topPlatosAno.slice(0, 8)} 
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-                  <XAxis type="number" stroke="#9CA3AF" />
-                  <YAxis 
-                    dataKey="nombre" 
-                    type="category" 
-                    stroke="#9CA3AF" 
-                    width={110}
-                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                    tickLine={false}
-                  />
-                  <Tooltip 
-                    contentStyle={tooltipStyle}
-                    formatter={(value: number) => [`${value} uds`, 'Cantidad']}
-                  />
-                  <Bar 
-                    dataKey="cantidad" 
-                    radius={[0, 4, 4, 0]}
-                    animationDuration={1500}
-                  >
-                    {stats.topPlatosAno.slice(0, 8).map((_, index) => (
-                      <Cell 
-                        key={`cell-ano-${index}`} 
-                        fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8]} 
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-              No hay datos suficientes para mostrar estadísticas
-            </p>
-          )}
-        </motion.div>
-      </div>
     </div>
   );
-}
-
-export default function EstadisticasPage() {
-  const pathname = usePathname();
-  const [pageKey, setPageKey] = useState(0);
-  const prevPathnameRef = useRef(pathname);
-
-  if (pathname !== prevPathnameRef.current) {
-    prevPathnameRef.current = pathname;
-    return <EstadisticasContent mountKey={pageKey + 1} />;
-  }
-
-  return <EstadisticasContent mountKey={pageKey} />;
 }
