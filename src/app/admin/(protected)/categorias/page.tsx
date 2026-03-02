@@ -262,23 +262,25 @@ export default function CategoriasPage() {
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
                   onClick={() => handleSort('orden')}
                 >
-                  <div className="flex items-center gap-1">
-                    Orden
-                    {sortField === 'orden' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    ) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
-                  </div>
+                    <div className="flex items-center gap-1">
+                      Orden
+                      {sortField === 'orden' && (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      )}
+                      {sortField !== 'orden' && <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                    </div>
                 </th>
                 <th 
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
                   onClick={() => handleSort('nombre_es')}
                 >
-                  <div className="flex items-center gap-1">
-                    Nombre (ES)
-                    {sortField === 'nombre_es' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    ) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
-                  </div>
+                    <div className="flex items-center gap-1">
+                      Nombre (ES)
+                      {sortField === 'nombre_es' && (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      )}
+                      {sortField !== 'nombre_es' && <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                    </div>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                   Tipo
@@ -375,15 +377,16 @@ export default function CategoriasPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400 dark:text-gray-500">#{cat.orden}</span>
                     <p className="font-medium text-gray-900 dark:text-gray-100">{cat.nombre_es}</p>
-                    {cat.categoria_padre_id ? (
+                    {cat.categoria_padre_id && (
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-medium">
                         Sub
                       </span>
-                    ) : cat.hasSubcategories ? (
+                    )}
+                    {!cat.categoria_padre_id && cat.hasSubcategories && (
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">
                         Principal
                       </span>
-                    ) : null}
+                    )}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {cat.categoria_padre_id && cat.parentName ? `Subcategoría de ${cat.parentName}` : ''}
@@ -428,10 +431,11 @@ export default function CategoriasPage() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                <label htmlFor="nombre_es" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                   Nombre (Español) *
                 </label>
                 <input
+                  id="nombre_es"
                   type="text"
                   required
                   value={formData.nombre_es}
@@ -443,10 +447,11 @@ export default function CategoriasPage() {
               {showTranslations && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    <label htmlFor="nombre_en" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                       Nombre (Inglés)
                     </label>
                     <input
+                      id="nombre_en"
                       type="text"
                       value={formData.nombre_en}
                       onChange={(e) => setFormData({ ...formData, nombre_en: e.target.value })}
@@ -454,10 +459,11 @@ export default function CategoriasPage() {
                     />
                   </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  <label htmlFor="nombre_fr" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     Nombre (Francés)
                   </label>
                   <input
+                    id="nombre_fr"
                     type="text"
                     value={formData.nombre_fr}
                     onChange={(e) => setFormData({ ...formData, nombre_fr: e.target.value })}
@@ -465,10 +471,11 @@ export default function CategoriasPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  <label htmlFor="nombre_it" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     Nombre (Italiano)
                   </label>
                   <input
+                    id="nombre_it"
                     type="text"
                     value={formData.nombre_it}
                     onChange={(e) => setFormData({ ...formData, nombre_it: e.target.value })}
@@ -476,10 +483,11 @@ export default function CategoriasPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  <label htmlFor="nombre_de" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     Nombre (Alemán)
                   </label>
                   <input
+                    id="nombre_de"
                     type="text"
                     value={formData.nombre_de}
                     onChange={(e) => setFormData({ ...formData, nombre_de: e.target.value })}
@@ -490,10 +498,11 @@ export default function CategoriasPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                <label htmlFor="descripcion_es" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                   Descripción (Español)
                 </label>
                 <textarea
+                  id="descripcion_es"
                   value={formData.descripcion_es}
                   onChange={(e) => setFormData({ ...formData, descripcion_es: e.target.value })}
                   rows={2}
@@ -505,10 +514,11 @@ export default function CategoriasPage() {
               {showTranslations && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    <label htmlFor="descripcion_en" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                       Descripción (Inglés)
                     </label>
                   <textarea
+                    id="descripcion_en"
                     value={formData.descripcion_en}
                     onChange={(e) => setFormData({ ...formData, descripcion_en: e.target.value })}
                     rows={2}
@@ -516,10 +526,11 @@ export default function CategoriasPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  <label htmlFor="descripcion_fr" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     Descripción (Francés)
                   </label>
                   <textarea
+                    id="descripcion_fr"
                     value={formData.descripcion_fr}
                     onChange={(e) => setFormData({ ...formData, descripcion_fr: e.target.value })}
                     rows={2}
@@ -527,10 +538,11 @@ export default function CategoriasPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  <label htmlFor="descripcion_it" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     Descripción (Italiano)
                   </label>
                   <textarea
+                    id="descripcion_it"
                     value={formData.descripcion_it}
                     onChange={(e) => setFormData({ ...formData, descripcion_it: e.target.value })}
                     rows={2}
@@ -538,10 +550,11 @@ export default function CategoriasPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  <label htmlFor="descripcion_de" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     Descripción (Alemán)
                   </label>
                   <textarea
+                    id="descripcion_de"
                     value={formData.descripcion_de}
                     onChange={(e) => setFormData({ ...formData, descripcion_de: e.target.value })}
                     rows={2}
@@ -552,10 +565,11 @@ export default function CategoriasPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                <label htmlFor="orden" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                   Orden
                 </label>
                 <input
+                  id="orden"
                   type="number"
                   value={formData.orden}
                   onChange={(e) => setFormData({ ...formData, orden: Number.parseInt(e.target.value) || 0 })}
@@ -564,10 +578,11 @@ export default function CategoriasPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                <label htmlFor="categoria_padre_id" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                   Categoría Padre (para subcategorías)
                 </label>
                 <select
+                  id="categoria_padre_id"
                   value={formData.categoria_padre_id || ''}
                   onChange={(e) => setFormData({ ...formData, categoria_padre_id: e.target.value || null })}
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -587,10 +602,11 @@ export default function CategoriasPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                <label htmlFor="categoria_complemento_de" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                   Complemento de categoría
                 </label>
                 <select
+                  id="categoria_complemento_de"
                   value={formData.categoria_complemento_de || ''}
                   onChange={(e) => setFormData({ ...formData, categoria_complemento_de: e.target.value || null })}
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
