@@ -4,7 +4,7 @@ import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
 import { t } from "@/lib/translations";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useCart } from "@/lib/cart-context";
 import type { EmpresaInfo } from "@/lib/server-services";
 
@@ -21,8 +21,10 @@ export function SiteHeaderClient({ showCart, empresa }: SiteHeaderClientProps) {
     openCart();
   };
  
+  const prevTotalItemsRef = useRef(totalItems);
+
   useEffect(() => {
-    if (totalItems > 0) {
+    if (prevTotalItemsRef.current !== totalItems && totalItems > 0) {
       setAnimate(false);
       const timeout = setTimeout(() => setAnimate(true), 10);
       const timeout2 = setTimeout(() => setAnimate(false), 1000);
@@ -31,6 +33,7 @@ export function SiteHeaderClient({ showCart, empresa }: SiteHeaderClientProps) {
         clearTimeout(timeout2);
       };
     }
+    prevTotalItemsRef.current = totalItems;
   }, [totalItems]);
 
   const logoUrl = empresa?.logoUrl ?? null;

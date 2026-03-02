@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useId } from "react"
+import { useState, useEffect, useId, useRef } from "react"
 import { Plus, Minus, Check } from "lucide-react"
 import {
   Dialog,
@@ -79,12 +79,16 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
   }
 
   // Reset quantity when dialog opens with a new item or closes
-  useEffect(() => {
-    if (open && item) {
-      setQuantity(1); // Reset to 1 when a new item is selected for the dialog
-      setSelectedComplement(null);
-    }
-  }, [open, item])
+  const previousOpenRef = useRef(open);
+  const previousItemIdRef = useRef(item?.id);
+  
+  if (open && item && (!previousOpenRef.current || previousItemIdRef.current !== item.id)) {
+    setQuantity(1);
+    setSelectedComplement(null);
+  }
+  
+  previousOpenRef.current = open;
+  previousItemIdRef.current = item?.id;
 
   const totalComplementsPrice = selectedComplement ? selectedComplement.price : 0;
   const totalPrice = (item ? item.price + totalComplementsPrice : 0) * quantity;

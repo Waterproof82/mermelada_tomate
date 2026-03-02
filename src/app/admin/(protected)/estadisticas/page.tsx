@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { BarChart3, ShoppingCart, Euro, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
@@ -443,10 +443,12 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
 export default function EstadisticasPage() {
   const pathname = usePathname();
   const [pageKey, setPageKey] = useState(0);
+  const prevPathnameRef = useRef(pathname);
 
-  useEffect(() => {
-    setPageKey(prev => prev + 1);
-  }, [pathname]);
+  if (pathname !== prevPathnameRef.current) {
+    prevPathnameRef.current = pathname;
+    return <EstadisticasContent mountKey={pageKey + 1} />;
+  }
 
   return <EstadisticasContent mountKey={pageKey} />;
 }

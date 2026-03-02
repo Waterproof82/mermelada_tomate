@@ -80,11 +80,15 @@ function mapTranslations(data: any, prefix: string) {
 }
 
 function parseMainDomain(domain: string): string {
-  const subdomainPedidos = 'pedidos';
-  const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
-  return isPedidos
-    ? domain.replace(/^pedidos\./, '').replace(/-pedidos$/, '')
-    : domain;
+  const domainParts = domain.split('.');
+  if (domainParts.length >= 2) {
+    // Si tiene subdominio (ej: pedidos.localhost o pedidos.dominio.com)
+    const potentialSubdomain = domainParts[0];
+    if (potentialSubdomain === 'pedidos' || potentialSubdomain.endsWith('-pedidos')) {
+      return domainParts.slice(1).join('.');
+    }
+  }
+  return domain;
 }
 
 export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | null> {
@@ -106,11 +110,14 @@ export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | 
     .eq("dominio", mainDomain)
     .maybeSingle();
 
-  // Si no encuentra, buscar por subdominio
+  // Si no encuentra, buscar por subdominio pedidos
   if (!data) {
     const subdomainPedidos = 'pedidos';
-    const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
+    const isPedidos = domain.startsWith(`${subdomainPedidos}.`) || domain.includes('-pedidos');
     if (isPedidos) {
+      // Extraer el dominio principal del subdominio
+      const mainDomain = extractMainDomain(domain, subdomainPedidos);
+      
       const { data: subdomainData } = await supabase
         .from("empresas")
         .select(`
@@ -122,7 +129,7 @@ export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | 
           titulo, subtitulo,
           subtitulo2_es, subtitulo2_en, subtitulo2_fr, subtitulo2_it, subtitulo2_de
         `)
-        .eq("subdomain_pedidos", true)
+        .eq("dominio", mainDomain)
         .maybeSingle();
       
       if (subdomainData) data = subdomainData;
@@ -165,7 +172,10 @@ export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | 
 
 export function isPedidosSubdomain(currentDomain: string, subdomainConfig: string | null): boolean {
   if (!subdomainConfig) return false;
-  return currentDomain.startsWith(`${subdomainConfig}.`);
+  const config = subdomainConfig.split('.')[0]; // "pedidos.localhost" -> "pedidos"
+  const domainParts = currentDomain.split('.');
+  // Comprobar si el inicio del dominio coincide con la config
+  return domainParts[0] === config || currentDomain.startsWith(`${subdomainConfig}.`);
 }
 
 export function extractMainDomain(fullDomain: string, subdomainConfig: string | null): string {

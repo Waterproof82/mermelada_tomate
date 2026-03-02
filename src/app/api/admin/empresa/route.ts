@@ -1,41 +1,40 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Configuración de Supabase incompleta");
+  }
+  
+  return createClient(supabaseUrl, supabaseKey);
+}
 
-const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
+function getEmpresaId(request: NextRequest): string | null {
+  return request.headers.get('x-empresa-id');
+}
 
-export async function GET() {
+const updateEmpresaSchema = z.object({
+  email_notification: z.string().email().optional().or(z.literal('')),
+  telefono_whatsapp: z.string().optional(),
+});
+
+export async function GET(request: NextRequest) {
+  const empresaId = getEmpresaId(request);
+  if (!empresaId) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
+    const supabase = getSupabaseClient();
 
     const { data: empresa } = await supabase
       .from('empresas')
       .select('email_notification, telefono_whatsapp')
-      .eq('id', perfil.empresa_id)
+      .eq('id', empresaId)
       .single();
 
     return NextResponse.json({
@@ -47,37 +46,32 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
+  const empresaId = getEmpresaId(request);
+  if (!empresaId) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
-
     const body = await request.json();
-    const { email_notification, telefono_whatsapp } = body;
+    const parsed = updateEmpresaSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors[0].message },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getSupabaseClient();
 
     const { error } = await supabase
       .from('empresas')
-      .update({ email_notification, telefono_whatsapp })
-      .eq('id', perfil.empresa_id);
+      .update({ 
+        email_notification: parsed.data.email_notification || null,
+        telefono_whatsapp: parsed.data.telefono_whatsapp || null,
+      })
+      .eq('id', empresaId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

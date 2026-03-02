@@ -1,4 +1,4 @@
-import { IStorageRepository, UploadResult } from "@/domain/repositories/IStorageRepository";
+import { IStorageRepository, UploadResult } from "@/core/domain/repositories/IStorageRepository";
 import { getPresignedUploadUrlAction, deleteFileAction } from "./actions";
 
 export class R2StorageRepository implements IStorageRepository {

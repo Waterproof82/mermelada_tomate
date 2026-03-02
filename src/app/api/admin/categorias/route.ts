@@ -1,34 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 
-const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
+const queryIdSchema = z.object({
+  id: z.string().uuid(),
+});
 
-async function getAdminEmpresaId() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('admin_token')?.value;
+const createCategoryBodySchema = z.object({
+  nombre_es: z.string().min(1, "El nombre en español es requerido"),
+  nombre_en: z.string().optional(),
+  nombre_fr: z.string().optional(),
+  nombre_it: z.string().optional(),
+  nombre_de: z.string().optional(),
+  descripcion_es: z.string().optional(),
+  descripcion_en: z.string().optional(),
+  descripcion_fr: z.string().optional(),
+  descripcion_it: z.string().optional(),
+  descripcion_de: z.string().optional(),
+  orden: z.number().int().default(0),
+  categoria_complemento_de: z.string().uuid().nullable().optional(),
+  complemento_obligatorio: z.boolean().default(false),
+  categoria_padre_id: z.string().uuid().nullable().optional(),
+});
 
-  if (!token) return null;
+const updateCategoryBodySchema = createCategoryBodySchema.partial();
 
-  try {
-    const secret = new TextEncoder().encode(ADMIN_TOKEN_SECRET);
-    const { payload } = await jwtVerify(token, secret);
-    return payload.empresaId as string;
-  } catch {
-    return null;
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Configuración de Supabase incompleta");
   }
+  
+  return createClient(supabaseUrl, supabaseKey);
 }
 
-export async function GET() {
-  const empresaId = await getAdminEmpresaId();
+function getEmpresaId(request: NextRequest): string | null {
+  return request.headers.get('x-empresa-id');
+}
+
+export async function GET(request: NextRequest) {
+  const empresaId = getEmpresaId(request);
   if (!empresaId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('categorias')
@@ -44,40 +62,41 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
+  const empresaId = getEmpresaId(request);
   if (!empresaId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
   const body = await request.json();
-  const { nombre_es, nombre_en, nombre_fr, nombre_it, nombre_de, descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de, orden, categoria_complemento_de, complemento_obligatorio } = body;
+  const parsed = createCategoryBodySchema.safeParse(body);
 
-  if (!nombre_es) {
-    return NextResponse.json({ error: 'El nombre en español es requerido' }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0].message },
+      { status: 400 }
+    );
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('categorias')
     .insert({
       empresa_id: empresaId,
-      nombre_es,
-      nombre_en: nombre_en || null,
-      nombre_fr: nombre_fr || null,
-      nombre_it: nombre_it || null,
-      nombre_de: nombre_de || null,
-      descripcion_es: descripcion_es || null,
-      descripcion_en: descripcion_en || null,
-      descripcion_fr: descripcion_fr || null,
-      descripcion_it: descripcion_it || null,
-      descripcion_de: descripcion_de || null,
-      orden: orden || 0,
-      categoria_complemento_de: categoria_complemento_de || null,
-      complemento_obligatorio: complemento_obligatorio || false,
-      categoria_padre_id: body.categoria_padre_id || null,
+      nombre_es: parsed.data.nombre_es,
+      nombre_en: parsed.data.nombre_en || null,
+      nombre_fr: parsed.data.nombre_fr || null,
+      nombre_it: parsed.data.nombre_it || null,
+      nombre_de: parsed.data.nombre_de || null,
+      descripcion_es: parsed.data.descripcion_es || null,
+      descripcion_en: parsed.data.descripcion_en || null,
+      descripcion_fr: parsed.data.descripcion_fr || null,
+      descripcion_it: parsed.data.descripcion_it || null,
+      descripcion_de: parsed.data.descripcion_de || null,
+      orden: parsed.data.orden,
+      categoria_complemento_de: parsed.data.categoria_complemento_de || null,
+      complemento_obligatorio: parsed.data.complemento_obligatorio,
+      categoria_padre_id: parsed.data.categoria_padre_id || null,
     })
     .select()
     .single();
@@ -90,44 +109,51 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
+  const empresaId = getEmpresaId(request);
   if (!empresaId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const idParam = searchParams.get('id');
 
-  if (!id) {
-    return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+  const idParsed = queryIdSchema.safeParse({ id: idParam });
+  if (!idParsed.success) {
+    return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
   }
 
   const body = await request.json();
-  const { nombre_es, nombre_en, nombre_fr, nombre_it, nombre_de, descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de, orden, categoria_complemento_de, complemento_obligatorio, categoria_padre_id } = body;
+  const parsed = updateCategoryBodySchema.safeParse(body);
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0].message },
+      { status: 400 }
+    );
+  }
+
+  const supabase = getSupabaseClient();
+
+  const updateData: Record<string, unknown> = {};
+  if (parsed.data.nombre_es !== undefined) updateData.nombre_es = parsed.data.nombre_es;
+  if (parsed.data.nombre_en !== undefined) updateData.nombre_en = parsed.data.nombre_en;
+  if (parsed.data.nombre_fr !== undefined) updateData.nombre_fr = parsed.data.nombre_fr;
+  if (parsed.data.nombre_it !== undefined) updateData.nombre_it = parsed.data.nombre_it;
+  if (parsed.data.nombre_de !== undefined) updateData.nombre_de = parsed.data.nombre_de;
+  if (parsed.data.descripcion_es !== undefined) updateData.descripcion_es = parsed.data.descripcion_es;
+  if (parsed.data.descripcion_en !== undefined) updateData.descripcion_en = parsed.data.descripcion_en;
+  if (parsed.data.descripcion_fr !== undefined) updateData.descripcion_fr = parsed.data.descripcion_fr;
+  if (parsed.data.descripcion_it !== undefined) updateData.descripcion_it = parsed.data.descripcion_it;
+  if (parsed.data.descripcion_de !== undefined) updateData.descripcion_de = parsed.data.descripcion_de;
+  if (parsed.data.orden !== undefined) updateData.orden = parsed.data.orden;
+  if (parsed.data.categoria_complemento_de !== undefined) updateData.categoria_complemento_de = parsed.data.categoria_complemento_de;
+  if (parsed.data.complemento_obligatorio !== undefined) updateData.complemento_obligatorio = parsed.data.complemento_obligatorio;
+  if (parsed.data.categoria_padre_id !== undefined) updateData.categoria_padre_id = parsed.data.categoria_padre_id;
 
   const { data, error } = await supabase
     .from('categorias')
-    .update({
-      nombre_es,
-      nombre_en: nombre_en || null,
-      nombre_fr: nombre_fr || null,
-      nombre_it: nombre_it || null,
-      nombre_de: nombre_de || null,
-      descripcion_es: descripcion_es || null,
-      descripcion_en: descripcion_en || null,
-      descripcion_fr: descripcion_fr || null,
-      descripcion_it: descripcion_it || null,
-      descripcion_de: descripcion_de || null,
-      orden: orden || 0,
-      categoria_complemento_de: categoria_complemento_de || null,
-      complemento_obligatorio: complemento_obligatorio || false,
-      categoria_padre_id: categoria_padre_id || null,
-    })
-    .eq('id', id)
+    .update(updateData)
+    .eq('id', idParsed.data.id)
     .eq('empresa_id', empresaId)
     .select()
     .single();
@@ -140,26 +166,25 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
+  const empresaId = getEmpresaId(request);
   if (!empresaId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const idParam = searchParams.get('id');
 
-  if (!id) {
-    return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+  const idParsed = queryIdSchema.safeParse({ id: idParam });
+  if (!idParsed.success) {
+    return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseClient();
 
   const { error } = await supabase
     .from('categorias')
     .delete()
-    .eq('id', id)
+    .eq('id', idParsed.data.id)
     .eq('empresa_id', empresaId);
 
   if (error) {
