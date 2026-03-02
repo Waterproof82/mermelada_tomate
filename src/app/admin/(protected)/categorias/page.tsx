@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Plus, Pencil, Trash2, X, Loader2, Search, ArrowUpDown, ArrowUp, ArrowDown, Languages, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface Category {
@@ -58,7 +57,6 @@ const emptyForm: CategoryFormData = {
 };
 
 export default function CategoriasPage() {
-  const router = useRouter();
   const [categorias, setCategorias] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -88,7 +86,7 @@ export default function CategoriasPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setSaving(true);
     setError('');
@@ -207,8 +205,8 @@ export default function CategoriasPage() {
       if (sortField === 'orden') {
         return sortDirection === 'asc' ? a.orden - b.orden : b.orden - a.orden;
       }
-      const aVal = (a[sortField as keyof Category] || '').toLowerCase();
-      const bVal = (b[sortField as keyof Category] || '').toLowerCase();
+      const aVal = String(a[sortField as keyof Category] ?? '').toLowerCase();
+      const bVal = String(b[sortField as keyof Category] ?? '').toLowerCase();
       return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     });
 
@@ -560,7 +558,7 @@ export default function CategoriasPage() {
                 <input
                   type="number"
                   value={formData.orden}
-                  onChange={(e) => setFormData({ ...formData, orden: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, orden: Number.parseInt(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
