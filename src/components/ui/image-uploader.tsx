@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { Upload, Loader2 } from 'lucide-react';
 import { uploadImageAction } from '@/core/application/actions/storage.actions';
 
@@ -17,7 +18,7 @@ const QUALITY = 0.8;
 
 async function optimizeImage(file: File): Promise<{ file: File; type: string }> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const img = document.createElement('img');
     img.onload = () => {
       const canvas = document.createElement('canvas');
       let width = img.width;
@@ -162,10 +163,12 @@ export function ImageUploader({
 
       {value ? (
         <div className="relative group rounded-lg overflow-hidden border h-48">
-          <img
+          <Image
             src={value}
             alt="Preview"
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            unoptimized
           />
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <button
@@ -185,14 +188,13 @@ export function ImageUploader({
           </div>
         </div>
       ) : (
-        <div
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
           onClick={handleClick}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); }}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          disabled={uploading}
           className={`
             border-2 border-dashed rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer transition-colors
             ${dragOver ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
@@ -214,7 +216,7 @@ export function ImageUploader({
               <span className="text-xs text-gray-400">JPEG, PNG, WEBP (max 5MB)</span>
             </>
           )}
-        </div>
+        </button>
       )}
 
       <input
