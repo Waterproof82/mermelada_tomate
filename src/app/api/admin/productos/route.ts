@@ -20,7 +20,7 @@ const createProductBodySchema = z.object({
   precio: z.union([z.number(), z.string()]).refine(val => !isNaN(parseFloat(String(val))), {
     message: "El precio debe ser un número válido",
   }).transform(val => parseFloat(String(val))),
-  foto_url: z.string().url().optional(),
+  foto_url: z.string().url().optional().nullable(),
   categoria_id: z.string().uuid().nullable().optional(),
   es_especial: z.boolean().default(false),
   activo: z.boolean().default(true),
@@ -150,7 +150,9 @@ export async function PUT(request: NextRequest) {
   if (parsed.data.descripcion_it !== undefined) updateData.descripcion_it = parsed.data.descripcion_it;
   if (parsed.data.descripcion_de !== undefined) updateData.descripcion_de = parsed.data.descripcion_de;
   if (parsed.data.precio !== undefined) updateData.precio = parsed.data.precio;
-  if (parsed.data.foto_url !== undefined) updateData.foto_url = parsed.data.foto_url;
+  if (parsed.data.foto_url !== undefined) {
+    updateData.foto_url = parsed.data.foto_url;
+  }
   if (parsed.data.categoria_id !== undefined) updateData.categoria_id = parsed.data.categoria_id;
   if (parsed.data.es_especial !== undefined) updateData.es_especial = parsed.data.es_especial;
   if (parsed.data.activo !== undefined) updateData.activo = parsed.data.activo;
