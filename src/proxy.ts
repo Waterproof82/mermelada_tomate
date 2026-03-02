@@ -29,7 +29,18 @@ export async function proxy(request: NextRequest) {
 
     try {
       const secret = new TextEncoder().encode(ADMIN_TOKEN_SECRET);
-      await jwtVerify(adminToken, secret);
+      const { payload } = await jwtVerify(adminToken, secret);
+      
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-empresa-id', payload.empresaId as string);
+      requestHeaders.set('x-admin-id', payload.adminId as string);
+      requestHeaders.set('x-admin-rol', payload.rol as string);
+
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
     } catch {
       return NextResponse.json(
         { error: 'Token inválido o expirado' },
