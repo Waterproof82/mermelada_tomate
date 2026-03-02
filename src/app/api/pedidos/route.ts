@@ -315,15 +315,17 @@ export async function POST(request: Request) {
       .eq('dominio', mainDomain)
       .single();
 
-    // Si no encuentra, buscar por subdomain_pedidos
+    // Si no encuentra, buscar por subdomain pedidos
     if (empresaError || !empresa) {
       const subdomainPedidos = 'pedidos';
-      const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
+      const isPedidos = domain.startsWith(`${subdomainPedidos}.`) || domain.includes('-pedidos');
       if (isPedidos) {
+        // Extraer el dominio principal del subdominio
+        const mainDomainFromSubdomain = domain.split('.').slice(1).join('.');
         const { data: empresaSubdomain } = await supabase
           .from('empresas')
           .select('id, nombre, email_notification, telefono_whatsapp')
-          .eq('subdomain_pedidos', true)
+          .eq('dominio', mainDomainFromSubdomain)
           .single();
         if (empresaSubdomain) empresa = empresaSubdomain;
       }
