@@ -222,7 +222,7 @@ async function upsertCliente(supabase: any, empresaId: string, nombre: string, t
   return upsertClienteByTelefono(supabase, empresaId, nombre, telefono, email || undefined);
 }
 
-async function createPedido(supabase: any, empresaId: string, clienteId: string | null, telefono: string, items: CartItem[], total: number) {
+async function createPedido(supabase: any, empresaId: string, clienteId: string | null, items: CartItem[], total: number) {
   const { data: lastOrder } = await supabase
     .from('pedidos')
     .select('numero_pedido')
@@ -237,7 +237,6 @@ async function createPedido(supabase: any, empresaId: string, clienteId: string 
       empresa_id: empresaId,
       numero_pedido: nuevoNumeroPedido,
       cliente_id: clienteId,
-      telefono: telefono,
       detalle_pedido: items.map(ci => ({
         producto_id: ci.item.id,
         nombre: ci.item.name,
@@ -363,7 +362,7 @@ export async function POST(request: Request) {
 
     const clienteId = await upsertCliente(supabase, empresa.id, sanitizedNombre, sanitizedTelefono, sanitizedEmail);
 
-    const { pedidoError, nuevoNumeroPedido } = await createPedido(supabase, empresa.id, clienteId, sanitizedTelefono, items, total);
+    const { pedidoError, nuevoNumeroPedido } = await createPedido(supabase, empresa.id, clienteId, items, total);
     if (pedidoError) {
       console.error('Error guardando pedido:', pedidoError);
       return NextResponse.json({ error: 'Error guardando pedido' }, { status: 500 });
