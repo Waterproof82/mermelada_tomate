@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       .single();
 
     const body = await request.json();
-    const { texto_promocion, imagen_base64 } = body;
+    const { texto_promocion, imagen_url } = body;
 
     if (!texto_promocion) {
       return NextResponse.json({ error: 'Falta el texto de la promoción' }, { status: 400 });
@@ -149,9 +149,9 @@ export async function POST(request: Request) {
       <h1 style="margin: 0; color: #ffffff; font-size: 24px;">${empresa?.nombre || 'Promociones'}</h1>
     </div>
     `}
-    ${imagen_base64 ? `
+    ${imagen_url ? `
     <div style="padding: 0;">
-      <img src="${imagen_base64}" alt="Promoción" style="width: 100%; max-width: 500px; height: auto; display: block;">
+      <img src="${imagen_url}" alt="Promoción" style="width: 100%; max-width: 500px; height: auto; display: block;">
     </div>
     ` : ''}
     <div style="padding: 24px;">

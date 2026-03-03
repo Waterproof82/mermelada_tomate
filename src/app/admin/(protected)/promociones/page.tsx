@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Mail, FileText, Send, CheckCircle, Image } from 'lucide-react';
+import { Users, Mail, FileText, Send, CheckCircle, Image, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/lib/admin-context';
+import { uploadImageAction } from '@/core/application/actions/storage.actions';
 
 interface Cliente {
   id: string;
@@ -21,10 +22,11 @@ interface Promocion {
 }
 
 export default function PromocionesPage() {
-  const { empresaId } = useAdmin();
+  const { empresaId, empresaSlug } = useAdmin();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
   const [savingPromo, setSavingPromo] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -58,16 +60,6 @@ export default function PromocionesPage() {
 
   const clientesConPromociones = clientes.filter(c => c.aceptar_promociones && c.email);
 
-  // Convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -93,10 +85,35 @@ export default function PromocionesPage() {
     
     setSavingPromo(true);
     try {
-      // Convert image to base64 if selected
-      let imagenBase64: string | null = null;
+      // Upload image to R2 if selected
+      let imagenUrl: string | null = null;
       if (selectedImage) {
-        imagenBase64 = await fileToBase64(selectedImage);
+        setUploadingImage(true);
+        try {
+          // Get upload URL from server
+          const fileName = `promo-${Date.now()}-${selectedImage.name}`;
+          const result = await uploadImageAction(
+            fileName,
+            selectedImage.type,
+            selectedImage.size,
+            empresaSlug
+          );
+          
+          // Upload to R2
+          const uploadRes = await fetch(result.url, {
+            method: 'PUT',
+            body: selectedImage,
+            headers: { 'Content-Type': selectedImage.type },
+          });
+          
+          if (!uploadRes.ok) {
+            throw new Error('Error uploading image');
+          }
+          
+          imagenUrl = result.publicUrl;
+        } finally {
+          setUploadingImage(false);
+        }
       }
 
       const res = await fetch('/api/admin/promociones', {
@@ -104,7 +121,7 @@ export default function PromocionesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           texto_promocion: promoTexto,
-          imagen_base64: imagenBase64,
+          imagen_url: imagenUrl,
         }),
       });
       
@@ -118,6 +135,7 @@ export default function PromocionesPage() {
       }
     } catch (error) {
       console.error('Error creating promocion:', error);
+      alert('Error al crear la promoción');
     } finally {
       setSavingPromo(false);
     }
@@ -260,7 +278,17 @@ export default function PromocionesPage() {
                 disabled={!promoTexto || savingPromo || clientesConPromociones.length === 0}
                 className="bg-primary hover:bg-primary/90"
               >
-                {savingPromo ? 'Guardando...' : 'Guardar y Enviar'}
+                {savingPromo ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {uploadingImage ? 'Subiendo imagen...' : 'Enviando...'}
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Guardar y Enviar
+                  </>
+                )}
               </Button>
             )}
           </div>
