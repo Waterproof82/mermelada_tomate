@@ -9,8 +9,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
     const empresaId = searchParams.get('empresa');
+    const action = searchParams.get('action'); // 'baja' or 'alta'
 
-    console.log('Unsubscribe request:', { email, empresaId });
+    console.log('Promo request:', { email, empresaId, action });
 
     if (!email || !empresaId) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.almadearena.es'}/?error=invalid`);
@@ -32,8 +33,17 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.almadearena.es'}/?error=notfound`);
     }
 
-    // Toggle: cambiar valor de aceptar_promociones
-    const nuevoValor = !cliente.aceptar_promociones;
+    // Determinar nuevo valor según acción
+    let nuevoValor: boolean;
+    
+    if (action === 'alta') {
+      nuevoValor = true; // Darse de alta
+    } else if (action === 'baja') {
+      nuevoValor = false; // Darse de baja
+    } else {
+      // Default: toggle
+      nuevoValor = !cliente.aceptar_promociones;
+    }
 
     await supabase
       .from('clientes')
@@ -47,7 +57,7 @@ export async function GET(request: Request) {
     const mensaje = nuevoValor ? 'promo=on' : 'promo=off';
     return NextResponse.redirect(`${baseUrl}/?${mensaje}`);
   } catch (error) {
-    console.error('Unsubscribe error:', error);
+    console.error('Promo error:', error);
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.almadearena.es'}/?error=internal`);
   }
 }

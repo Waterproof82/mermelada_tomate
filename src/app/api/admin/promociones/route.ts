@@ -176,8 +176,11 @@ export async function POST(request: Request) {
       </p>
     </div>
     <div style="background-color: #f9f9f9; padding: 16px; text-align: center;">
+      <p style="margin: 0 0 8px 0; color: #888888; font-size: 12px;">
+        <a href="https://www.almadearena.es/api/unsubscribe?email=__EMAIL__&empresa=${perfil.empresa_id}&action=baja" style="color: #dc2626; text-decoration: underline;">Dar de baja las promociones</a>
+      </p>
       <p style="margin: 0; color: #888888; font-size: 12px;">
-        <a href="https://www.almadearena.es/api/unsubscribe?email=__EMAIL__&empresa=${perfil.empresa_id}" style="color: #008C45;">Gestionar preferencias de promociones</a>
+        <a href="https://www.almadearena.es/api/unsubscribe?email=__EMAIL__&empresa=${perfil.empresa_id}&action=alta" style="color: #16a34a; text-decoration: underline;">Volver a recibir promociones</a>
       </p>
     </div>
   </div>
