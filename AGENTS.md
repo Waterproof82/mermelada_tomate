@@ -30,12 +30,13 @@ src/
 
 | Tabla | PK | FK | Notas |
 |-------|----|----|-------|
-| `empresas` | id (uuid) | - | dominio, subdomain_pedidos, colores |
+| `empresas` | id (uuid) | - | dominio, subdomain_pedidos, colores, logo_url |
 | `perfiles_admin` | id (uuid) | empresa_id → empresas | → auth.users |
 | `categorias` | id (uuid) | empresa_id → empresas | categoria_padre_id, categoriaComplementoDe |
 | `productos` | id (uuid) | empresa_id, categoria_id → categorias | i18n: titulo_es/en/fr/it/de |
 | `clientes` | id (uuid) | empresa_id | telefono único |
 | `pedidos` | id (uuid) | empresa_id, cliente_id → clientes | detalle_pedido (JSON) |
+| `promociones` | id (uuid) | empresa_id → empresas | imagen_url, numero_envios |
 
 **Nota:** Tabla `pedidos` NO tiene columna `telefono` - el teléfono está en `clientes`.
 
@@ -58,11 +59,19 @@ src/
 - **Middleware**: `src/proxy.ts` - autentica JWT para `/api/admin/*`
 - **Imágenes**: Se optimizan en cliente (480x480, WebP, 80%)
 - **R2**: Cliente singleton en `core/infrastructure/storage/s3-client.ts`
+  - `getS3Client()` - Obtener cliente
+  - `getR2Config()` - Obtener config (bucket, domain)
+  - `deleteImageFromR2(url)` - Eliminar imagen del bucket
 - **R2 CORS**: Necesita configurarse para uploads directos (ejecutar `scripts/setup-r2-cors.ts`)
 - **Supabase**: Cliente singleton en `core/infrastructure/database/supabase-client.ts`
 - **Validation**: Todas las rutas API usan Zod schemas
 - **Subdominios**: `pedidos.dominio.com` activa el carrito
 - **Build**: "Skipping validation of types" es normal en Next.js 16
+- **Promociones**: 
+  - `/api/admin/promociones` - GET lista, POST crea y envía emails
+  - Imagen se sube a R2 en carpeta `{empresaSlug}/promo-*.webp`
+  - Al crear nueva promo, se borra imagen anterior de R2
+  - Email incluye logo de empresa (de empresas.logo_url) + imagen promo
 
 ## Comandos
 ```bash

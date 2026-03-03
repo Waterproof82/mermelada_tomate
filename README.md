@@ -144,6 +144,7 @@ NEXT_PUBLIC_R2_DOMAIN=https://tu-dominio.r2.dev
 | `clientes` | Clientes registrados | FK: `empresa_id` |
 | `pedidos` | Pedidos realizados | FK: `empresa_id`, `cliente_id` |
 | `perfiles_admin` | Admin users | FK: `id` → auth.users |
+| `promociones` | Promociones email | FK: `empresa_id` |
 
 ### Schema Productos (i18n)
 
@@ -204,6 +205,7 @@ if (!empresaId) return 401;
 - `/admin/categorias` - CRUD categorías
 - `/admin/pedidos` - Ver/administrar pedidos
 - `/admin/clientes` - Ver clientes
+- `/admin/promociones` - Enviar promociones por email
 - `/admin/configuracion` - Colores, email, WhatsApp
 
 ### Características
@@ -212,6 +214,44 @@ if (!empresaId) return 401;
 - **Buscador**: Filtra productos/categorías
 - **Ordenamiento**: Click en columnas
 - **Subida imágenes**: Optimización automática
+- **Promociones**: Email con imagen adjunta
+
+---
+
+## Promociones por Email
+
+### Flujo
+
+1. Admin accede a `/admin/promociones`
+2. Escribe el mensaje de promoción
+3. Opcional: selecciona imagen local
+4. Al guardar: imagen se sube a R2 → se guarda URL en BBDD → se envía email
+
+### Tabla `promociones`
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | uuid | PK |
+| `empresa_id` | uuid | FK → empresas |
+| `fecha_hora` | timestamp | Fecha de creación |
+| `texto_promocion` | text | Mensaje de la promo |
+| `imagen_url` | text | URL de imagen en R2 |
+| `numero_envios` | integer | Cantidad de emails enviados |
+
+### Email HTML
+
+- **Logo empresa**: Se obtiene de `empresas.logo_url`
+- **Imagen promoción**: Se inserta entre header y mensaje
+- **Link unsubscribe**: Personalizado por cliente
+
+### Limpieza de Imágenes
+
+Al crear una nueva promoción:
+1. Se obtiene la promoción anterior
+2. Se elimina la imagen anterior de R2
+3. Se crea la nueva promoción
+
+Esto evita imágenes huérfanas en el bucket.
 
 ---
 
@@ -276,6 +316,9 @@ pnpm lint
 npx tsx scripts/migrate-r2-folders.ts    # Migrar carpetas R2
 npx tsx scripts/migrate-db-urls.ts         # Migrar URLs BBDD
 npx tsx scripts/setup-r2-cors.ts          # Configurar CORS R2
+
+# Migraciones BBDD (Supabase)
+npx supabase db push                      # Push migraciones locales
 ```
 
 ---
