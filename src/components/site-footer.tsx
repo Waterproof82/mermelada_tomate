@@ -1,6 +1,7 @@
 "use client"
 
 import { MapPin, Mail, Globe, MessageCircle } from "lucide-react"
+import Image from 'next/image';
 import { useLanguage, type Language } from "@/lib/language-context"
 import type { EmpresaInfo } from "@/lib/server-services"
 
@@ -64,11 +65,15 @@ export function SiteFooter({ empresa }: SiteFooterProps) {
           {/* Columna 1: Info Empresa */}
           <div className="space-y-4">
             {empresa.logoUrl ? (
-              <img 
-                src={empresa.logoUrl} 
-                alt={empresa.nombre} 
-                className="h-16 w-auto max-w-[200px] object-contain"
-              />
+              <div className="relative h-16 w-auto max-w-[200px]">
+                <Image
+                  src={empresa.logoUrl}
+                  alt={empresa.nombre}
+                  fill
+                  className="object-contain"
+                  loading="eager"
+                />
+              </div>
             ) : (
               <h2 className="text-2xl font-bold text-white">{empresa.nombre}</h2>
             )}
