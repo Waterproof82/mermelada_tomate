@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { MapPin, Mail, Globe, MessageCircle } from "lucide-react"
 import { useLanguage, type Language } from "@/lib/language-context"
 import type { EmpresaInfo } from "@/lib/server-services"
@@ -58,22 +57,18 @@ export function SiteFooter({ empresa }: SiteFooterProps) {
   const descripcion = empresa.descripcion?.[language as 'es' | 'en' | 'fr' | 'it' | 'de'] ?? empresa.descripcion?.es
 
   return (
-    <footer className="w-full bg-black text-slate-200 mt-20 border-t border-slate-800">
+    <footer className="w-full bg-black text-slate-200 mt-20 border-t border-slate-800" suppressHydrationWarning>
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           
           {/* Columna 1: Info Empresa */}
           <div className="space-y-4">
             {empresa.logoUrl ? (
-              <div className="relative h-16 w-[200px]">
-                <Image 
-                  src={empresa.logoUrl} 
-                  alt={empresa.nombre} 
-                  fill
-                  className="object-contain"
-                  unoptimized={empresa.logoUrl.includes('supabase') || empresa.logoUrl.includes('r2')}
-                />
-              </div>
+              <img 
+                src={empresa.logoUrl} 
+                alt={empresa.nombre} 
+                className="h-16 w-auto max-w-[200px] object-contain"
+              />
             ) : (
               <h2 className="text-2xl font-bold text-white">{empresa.nombre}</h2>
             )}
