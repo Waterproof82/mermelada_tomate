@@ -120,9 +120,9 @@ export function SiteFooter({ empresa }: SiteFooterProps) {
           </div>
 
           {/* Columna 3: Mapa */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{t.ubicacion}</h3>
-            {empresa.urlMapa && (
+          {empresa.urlMapa && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{t.ubicacion}</h3>
               <div className="rounded-xl overflow-hidden border border-slate-700 h-48 w-full bg-slate-800">
                 <iframe
                   title="Ubicación"
@@ -135,28 +135,8 @@ export function SiteFooter({ empresa }: SiteFooterProps) {
                   src={empresa.urlMapa}
                 ></iframe>
               </div>
-            )}
-            {empresa.direccion && !empresa.urlMapa && (
-              <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(empresa.direccion)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-xl border border-slate-700 h-48 w-full group relative bg-slate-800 hover:border-slate-500 transition-colors"
-              >
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-4 text-center">
-                  <MapPin className="w-10 h-10 text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm">{empresa.direccion}</span>
-                  <span className="text-xs text-blue-400 mt-2 group-hover:text-blue-300">{t.verEnMapa}</span>
-                </div>
-              </a>
-            )}
-            {!empresa.urlMapa && !empresa.direccion && (
-              <div className="h-48 rounded-xl bg-slate-800 flex items-center justify-center text-slate-500 text-xs italic text-center p-4 border border-slate-700">
-                <MapPin className="w-8 h-8 text-slate-600 mb-2 block mx-auto"/>
-                {t.direccionNoConfigurada}
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-16 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
