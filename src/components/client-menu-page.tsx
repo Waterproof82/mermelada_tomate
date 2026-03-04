@@ -18,7 +18,7 @@ interface MenuPageProps {
 
 export function MenuPage({ menuData, header, showCart = false, empresa }: MenuPageProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background" suppressHydrationWarning>
       {typeof header !== 'undefined' ? header : null}
       <main className="flex-1">
         <HeroBanner empresa={empresa} />

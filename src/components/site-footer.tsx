@@ -54,7 +54,7 @@ export function SiteFooter({ empresa }: SiteFooterProps) {
   if (!empresa) return null
 
   // Obtener descripción en el idioma actual o fallback a español
-  const descripcion = empresa.descripcion?.[language as 'es' | 'en' | 'fr' | 'it' | 'de'] ?? empresa.descripcion?.es
+
 
   return (
     <footer className="w-full bg-black text-slate-200 mt-20 border-t border-slate-800" suppressHydrationWarning>
@@ -71,12 +71,6 @@ export function SiteFooter({ empresa }: SiteFooterProps) {
               />
             ) : (
               <h2 className="text-2xl font-bold text-white">{empresa.nombre}</h2>
-            )}
-            
-            {descripcion && (
-              <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-                {descripcion}
-              </p>
             )}
             
             <div className="flex gap-4 pt-2">
