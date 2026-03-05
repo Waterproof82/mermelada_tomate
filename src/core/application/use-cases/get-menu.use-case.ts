@@ -18,11 +18,31 @@ export class GetMenuUseCase {
     // 2. Filtrar categorías que no son complemento (excluir categoriaComplementoDe)
     const mainCategories = categories.filter((cat) => !cat.categoriaComplementoDe);
 
-    // 3. Separar categorías principales de subcategorías (por categoriaPadreId)
+    // 3. Obtener categorías de complementos y crear mapa
+    const complementCategories = categories.filter((cat) => cat.categoriaComplementoDe);
+    const complementsByCategoryId = new Map<string, typeof products>();
+    for (const compCat of complementCategories) {
+      const parentId = compCat.categoriaComplementoDe!;
+      const compProducts = products.filter((p) => p.categoriaId === compCat.id && p.activo);
+      if (!complementsByCategoryId.has(parentId)) {
+        complementsByCategoryId.set(parentId, []);
+      }
+      complementsByCategoryId.get(parentId)!.push(...compProducts);
+    }
+
+    // 4. Obtener map de complementoObligatorio por categoría padre
+    const complementoObligatorioMap = new Map<string, boolean>();
+    for (const compCat of complementCategories) {
+      if (compCat.categoriaComplementoDe) {
+        complementoObligatorioMap.set(compCat.categoriaComplementoDe, compCat.complementoObligatorio);
+      }
+    }
+
+    // 5. Separar categorías principales de subcategorías (por categoriaPadreId)
     const parentCategories = mainCategories.filter((cat) => !cat.categoriaPadreId);
     const subCategories = mainCategories.filter((cat) => cat.categoriaPadreId);
 
-    // 4. Crear mapa de subcategorías por su categoría padre
+    // 6. Crear mapa de subcategorías por su categoría padre
     const subcategoriesByParent = new Map<string, typeof subCategories>();
     for (const subCat of subCategories) {
       const parentId = subCat.categoriaPadreId!;
@@ -32,7 +52,7 @@ export class GetMenuUseCase {
       subcategoriesByParent.get(parentId)!.push(subCat);
     }
 
-    // 5. Mapear y agrupar - solo categorías principales (padres)
+    // 7. Mapear y agrupar - solo categorías principales (padres)
     const menu: MenuCategoryVM[] = parentCategories.map((parentCat) => {
       // Obtener subcategorías de esta categoría padre
       const childSubcategories = subcategoriesByParent.get(parentCat.id) || [];
@@ -48,6 +68,10 @@ export class GetMenuUseCase {
       // Combinar todos los productos
       const allProducts = [...parentProducts, ...subcategoryProducts];
 
+      // Obtener complementos para esta categoría
+      const categoryComplements = complementsByCategoryId.get(parentCat.id) || [];
+      const requiresComplement = complementoObligatorioMap.get(parentCat.id) || false;
+
       return {
         id: `category-${parentCat.id}`,
         label: parentCat.nombre,
@@ -62,39 +86,46 @@ export class GetMenuUseCase {
           descripcionTranslations: subCat.descripcionTranslations,
           products: products.filter((p) => p.categoriaId === subCat.id && p.activo).map((p) => ({
             id: p.id,
-            name: p.titulo,
-            description: p.descripcion || undefined,
+            name: p.titulo_es,
+            description: p.descripcion_es || undefined,
             price: p.precio,
             category: subCat.nombre.toLowerCase().replaceAll(" ", "-"),
             image: p.fotoUrl || undefined,
             highlight: p.esEspecial,
-            translations: p.translations ? {
-              en: p.translations.en ? { name: p.translations.en.titulo, description: p.translations.en.descripcion || undefined } : undefined,
-              fr: p.translations.fr ? { name: p.translations.fr.titulo, description: p.translations.fr.descripcion || undefined } : undefined,
-              it: p.translations.it ? { name: p.translations.it.titulo, description: p.translations.it.descripcion || undefined } : undefined,
-              de: p.translations.de ? { name: p.translations.de.titulo, description: p.translations.de.descripcion || undefined } : undefined,
-            } : undefined,
+            translations: {
+              en: p.titulo_en ? { name: p.titulo_en, description: p.descripcion_en || undefined } : undefined,
+              fr: p.titulo_fr ? { name: p.titulo_fr, description: p.descripcion_fr || undefined } : undefined,
+              it: p.titulo_it ? { name: p.titulo_it, description: p.descripcion_it || undefined } : undefined,
+              de: p.titulo_de ? { name: p.titulo_de, description: p.descripcion_de || undefined } : undefined,
+            },
           })),
         })) : undefined,
         items: allProducts.map((p) => ({
           id: p.id,
-          name: p.titulo,
-          description: p.descripcion || undefined,
+          name: p.titulo_es,
+          description: p.descripcion_es || undefined,
           price: p.precio,
           category: parentCat.nombre.toLowerCase().replaceAll(" ", "-"),
           image: p.fotoUrl || undefined,
           highlight: p.esEspecial,
-          translations: p.translations ? {
-            en: p.translations.en ? { name: p.translations.en.titulo, description: p.translations.en.descripcion || undefined } : undefined,
-            fr: p.translations.fr ? { name: p.translations.fr.titulo, description: p.translations.fr.descripcion || undefined } : undefined,
-            it: p.translations.it ? { name: p.translations.it.titulo, description: p.translations.it.descripcion || undefined } : undefined,
-            de: p.translations.de ? { name: p.translations.de.titulo, description: p.translations.de.descripcion || undefined } : undefined,
-          } : undefined,
+          translations: {
+            en: p.titulo_en ? { name: p.titulo_en, description: p.descripcion_en || undefined } : undefined,
+            fr: p.titulo_fr ? { name: p.titulo_fr, description: p.descripcion_fr || undefined } : undefined,
+            it: p.titulo_it ? { name: p.titulo_it, description: p.descripcion_it || undefined } : undefined,
+            de: p.titulo_de ? { name: p.titulo_de, description: p.descripcion_de || undefined } : undefined,
+          },
+          complements: categoryComplements.length > 0 ? categoryComplements.map((c) => ({
+            id: c.id,
+            name: c.titulo_es,
+            price: c.precio,
+            description: c.descripcion_es || undefined,
+          })) : undefined,
+          requiresComplement: requiresComplement || undefined,
         })),
       };
     });
 
-    // 6. Filtrar categorías vacías
+    // 8. Filtrar categorías vacías
     return menu.filter((cat) => cat.items.length > 0);
   }
 }

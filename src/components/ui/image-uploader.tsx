@@ -1,14 +1,67 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import Image from 'next/image';
+import { Upload, Loader2 } from 'lucide-react';
 import { uploadImageAction } from '@/core/application/actions/storage.actions';
 
 interface ImageUploaderProps {
-  value: string;
-  onChange: (url: string) => void;
-  label?: string;
-  empresaSlug?: string;
+  readonly value: string;
+  readonly onChange: (url: string) => void;
+  readonly label?: string;
+  readonly empresaSlug?: string;
+}
+
+const MAX_WIDTH = 480;
+const MAX_HEIGHT = 480;
+const QUALITY = 0.8;
+
+async function optimizeImage(file: File): Promise<{ file: File; type: string }> {
+  return new Promise((resolve, reject) => {
+    const img = document.createElement('img');
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > MAX_WIDTH) {
+        height = (height * MAX_WIDTH) / width;
+        width = MAX_WIDTH;
+      }
+      if (height > MAX_HEIGHT) {
+        width = (width * MAX_HEIGHT) / height;
+        height = MAX_HEIGHT;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('No se pudo crear el contexto de canvas'));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Error al comprimir imagen'));
+            return;
+          }
+          const optimizedFile = new File([blob], file.name, {
+            type: 'image/webp',
+          });
+          resolve({ file: optimizedFile, type: 'image/webp' });
+        },
+        'image/webp',
+        QUALITY
+      );
+    };
+    img.onerror = () => reject(new Error('Error al cargar imagen'));
+    img.src = URL.createObjectURL(file);
+  });
 }
 
 export function ImageUploader({ 
@@ -25,13 +78,11 @@ export function ImageUploader({
   const handleFileSelect = async (file: File) => {
     if (!file) return;
 
-    // Validar tipo
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
       setError('Tipo de archivo no permitido. Solo JPEG, PNG, WEBP o GIF.');
       return;
     }
 
-    // Validar tamaño (5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError('El archivo excede el tamaño máximo de 5MB.');
       return;
@@ -41,13 +92,19 @@ export function ImageUploader({
     setError('');
 
     try {
-      const result = await uploadImageAction(file.name, file.type, file.size, empresaSlug);
+      const optimized = await optimizeImage(file);
       
-      // Upload directo a R2
+      const result = await uploadImageAction(
+        optimized.file.name, 
+        optimized.type, 
+        optimized.file.size, 
+        empresaSlug
+      );
+      
       const uploadResponse = await fetch(result.url, {
         method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type },
+        body: optimized.file,
+        headers: { 'Content-Type': optimized.type },
       });
 
       if (!uploadResponse.ok) {
@@ -105,11 +162,13 @@ export function ImageUploader({
       )}
 
       {value ? (
-        <div className="relative group rounded-lg overflow-hidden border">
-          <img
+        <div className="relative group rounded-lg overflow-hidden border h-48">
+          <Image
             src={value}
             alt="Preview"
-            className="w-full h-48 object-cover"
+            fill
+            className="object-cover"
+            unoptimized
           />
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <button
@@ -129,16 +188,19 @@ export function ImageUploader({
           </div>
         </div>
       ) : (
-        <div
+        <button
+          type="button"
           onClick={handleClick}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          disabled={uploading}
           className={`
             border-2 border-dashed rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer transition-colors
             ${dragOver ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
             ${uploading ? 'pointer-events-none opacity-50' : ''}
           `}
+          aria-label="Subir imagen"
         >
           {uploading ? (
             <>
@@ -154,7 +216,7 @@ export function ImageUploader({
               <span className="text-xs text-gray-400">JPEG, PNG, WEBP (max 5MB)</span>
             </>
           )}
-        </div>
+        </button>
       )}
 
       <input

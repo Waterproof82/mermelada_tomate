@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { CartProvider } from "@/lib/cart-context";
 import { LanguageProvider } from "@/lib/language-context";
+import { PromoToast } from "@/components/promo-toast";
 import { headers } from "next/headers";
 import { getEmpresaByDomain } from "@/lib/server-services";
 
@@ -50,6 +51,7 @@ export default function RootLayout({
             <CartProvider>
               {children}
               <Toaster />
+              <PromoToast />
             </CartProvider>
           </LanguageProvider>
         </ThemeProvider>

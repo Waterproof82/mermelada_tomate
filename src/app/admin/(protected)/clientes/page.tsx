@@ -11,6 +11,7 @@ interface Cliente {
   telefono: string | null;
   direccion: string | null;
   aceptar_promociones: boolean | null;
+  numero_pedidos?: number;
   created_at: string;
 }
 
@@ -222,13 +223,15 @@ export default function ClientesPage() {
       </div>
 
       {/* Tabla clientes */}
-      {loading ? (
+      {loading && (
         <div className="text-center py-8 text-muted-foreground">Cargando...</div>
-      ) : filteredClientes.length === 0 ? (
+      )}
+      {!loading && filteredClientes.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
           {searchTerm ? 'No se encontraron clientes' : 'No hay clientes registrados'}
         </div>
-      ) : (
+      )}
+      {!loading && filteredClientes.length > 0 && (
         <div className="bg-card rounded-lg border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -238,6 +241,7 @@ export default function ClientesPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Teléfono</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Dirección</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Pedidos</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Fecha</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">Promociones</th>
                   <th className="px-4 py-3"></th>
@@ -277,6 +281,11 @@ export default function ClientesPage() {
                           {cliente.direccion || '-'}
                         </span>
                       </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-flex items-center justify-center px-2 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                        {cliente.numero_pedidos || 0}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-sm">
                       {cliente.created_at ? new Date(cliente.created_at).toLocaleDateString('es-ES') : '-'}
@@ -338,10 +347,11 @@ export default function ClientesPage() {
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                <label htmlFor="edit_nombre" className="block text-sm font-medium text-muted-foreground mb-1">
                   Nombre
                 </label>
                 <input
+                  id="edit_nombre"
                   type="text"
                   value={editForm.nombre}
                   onChange={(e) => setEditForm(prev => ({ ...prev, nombre: e.target.value }))}
@@ -350,10 +360,11 @@ export default function ClientesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                <label htmlFor="edit_email" className="block text-sm font-medium text-muted-foreground mb-1">
                   Email
                 </label>
                 <input
+                  id="edit_email"
                   type="email"
                   value={editForm.email}
                   onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
@@ -362,10 +373,11 @@ export default function ClientesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                <label htmlFor="edit_telefono" className="block text-sm font-medium text-muted-foreground mb-1">
                   Teléfono
                 </label>
                 <input
+                  id="edit_telefono"
                   type="tel"
                   value={editForm.telefono}
                   onChange={(e) => setEditForm(prev => ({ ...prev, telefono: e.target.value }))}
@@ -374,10 +386,11 @@ export default function ClientesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                <label htmlFor="edit_direccion" className="block text-sm font-medium text-muted-foreground mb-1">
                   Dirección <span className="text-muted-foreground font-normal">(opcional)</span>
                 </label>
                 <input
+                  id="edit_direccion"
                   type="text"
                   value={editForm.direccion}
                   onChange={(e) => setEditForm(prev => ({ ...prev, direccion: e.target.value }))}
@@ -413,10 +426,11 @@ export default function ClientesPage() {
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                <label htmlFor="create_nombre" className="block text-sm font-medium text-muted-foreground mb-1">
                   Nombre
                 </label>
                 <input
+                  id="create_nombre"
                   type="text"
                   value={editForm.nombre}
                   onChange={(e) => setEditForm(prev => ({ ...prev, nombre: e.target.value }))}
@@ -425,10 +439,11 @@ export default function ClientesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                <label htmlFor="create_email" className="block text-sm font-medium text-muted-foreground mb-1">
                   Email
                 </label>
                 <input
+                  id="create_email"
                   type="email"
                   value={editForm.email}
                   onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
@@ -437,10 +452,11 @@ export default function ClientesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                <label htmlFor="create_telefono" className="block text-sm font-medium text-muted-foreground mb-1">
                   Teléfono
                 </label>
                 <input
+                  id="create_telefono"
                   type="tel"
                   value={editForm.telefono}
                   onChange={(e) => setEditForm(prev => ({ ...prev, telefono: e.target.value }))}
@@ -449,10 +465,11 @@ export default function ClientesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                <label htmlFor="create_direccion" className="block text-sm font-medium text-muted-foreground mb-1">
                   Dirección <span className="text-muted-foreground font-normal">(opcional)</span>
                 </label>
                 <input
+                  id="create_direccion"
                   type="text"
                   value={editForm.direccion}
                   onChange={(e) => setEditForm(prev => ({ ...prev, direccion: e.target.value }))}

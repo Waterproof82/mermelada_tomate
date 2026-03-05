@@ -1,46 +1,33 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import { BarChart3, ShoppingCart, Euro, TrendingUp } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
+import { BarChart3, ShoppingCart, Euro, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useTheme } from 'next-themes';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 
 interface Stats {
   pedidosHoy: number;
   pedidosMes: number;
   totalHoy: number;
   totalMes: number;
+  totalAno: number;
   topPlatos: { nombre: string; cantidad: number; total: number }[];
+  topPlatosAno: { nombre: string; cantidad: number; total: number }[];
+  mesSeleccionado: string;
 }
 
-function EstadisticasContent({ mountKey }: { mountKey: number }) {
+const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: number }>) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const { theme } = useTheme();
-  const [chartKey, setChartKey] = useState(0);
-
-  useEffect(() => {
-    if (stats) {
-      setChartKey(prev => prev + 1);
-    }
-  }, [stats]);
-
-  const isDark = theme === 'dark';
-
-  const tooltipStyle = {
-    backgroundColor: isDark ? '#1F2937' : '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    color: isDark ? '#fff' : '#1F2937',
-    boxShadow: isDark ? '0 4px 6px rgba(0,0,0,0.3)' : '0 4px 6px rgba(0,0,0,0.1)'
-  };
+  const [selectedMonth, setSelectedMonth] = useState({ mes: new Date().getMonth(), año: new Date().getFullYear() });
 
   useEffect(() => {
     async function fetchStats() {
+      setLoading(true);
       try {
-        const res = await fetch('/api/admin/pedidos', { method: 'PUT' });
+        const res = await fetch(`/api/admin/pedidos?mes=${selectedMonth.mes}&año=${selectedMonth.año}`, { method: 'PUT' });
         if (res.ok) {
           const data = await res.json();
           setStats(data);
@@ -52,7 +39,28 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
       }
     }
     fetchStats();
-  }, []);
+  }, [selectedMonth]);
+
+  const cambiarMes = (delta: number) => {
+    setSelectedMonth(prev => {
+      let nuevoMes = prev.mes + delta;
+      let nuevoAño = prev.año;
+      
+      if (nuevoMes < 0) {
+        nuevoMes = 11;
+        nuevoAño--;
+      } else if (nuevoMes > 11) {
+        nuevoMes = 0;
+        nuevoAño++;
+      }
+      
+      return { mes: nuevoMes, año: nuevoAño };
+    });
+  };
+
+  const mesActual = selectedMonth.mes;
+  const añoActual = selectedMonth.año;
+  const esMesActual = mesActual === new Date().getMonth() && añoActual === new Date().getFullYear();
 
   if (loading) {
     return (
@@ -64,14 +72,38 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
 
   return (
     <div className="pt-20 lg:pt-0 px-6 lg:px-8">
-      <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-white mb-2">
-        Estadísticas
-      </h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
-        Resumen de pedidos y facturación
-      </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-white mb-1">
+            Estadísticas
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Resumen de pedidos y facturación
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => cambiarMes(-1)}
+            className="p-2 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          </button>
+          <div className="px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 min-w-[160px] text-center">
+            <span className="font-medium text-gray-900 dark:text-white">
+              {meses[mesActual]} {añoActual}
+            </span>
+          </div>
+          <button
+            onClick={() => cambiarMes(1)}
+            disabled={esMesActual}
+            className="p-2 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          </button>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <motion.div
           key={`kpi-1-${mountKey}`}
           initial={{ opacity: 0, y: 20 }}
@@ -106,7 +138,7 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
         >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <BarChart3 className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Pedidos mes</p>
@@ -126,12 +158,12 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
           key={`kpi-3-${mountKey}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
           className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-              <Euro className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <Euro className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Ventas hoy</p>
@@ -171,6 +203,31 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
             </div>
           </div>
         </motion.div>
+
+        <motion.div
+          key={`kpi-5-${mountKey}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Ventas año</p>
+              <motion.p 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.6, duration: 0.3 }}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              >
+                {(stats?.totalAno || 0).toFixed(2)}€
+              </motion.p>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -178,45 +235,39 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
           key={`chart-bar-${mountKey}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
           className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6"
         >
           <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            Platos más pedidos (este mes)
+            <ShoppingCart className="w-5 h-5" />
+            Top platos (este mes)
           </h2>
           
           {stats?.topPlatos && stats.topPlatos.length > 0 ? (
-            <div className="h-80">
+            <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  key={`bar-${mountKey}`}
-                  data={stats.topPlatos.slice(0, 10)} 
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-                  <XAxis type="number" stroke="#9CA3AF" />
+                <BarChart data={stats.topPlatos.slice(0, 8)} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" hide />
                   <YAxis 
-                    dataKey="nombre" 
                     type="category" 
-                    stroke="#9CA3AF" 
-                    width={75}
-                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    dataKey="nombre" 
+                    width={100}
+                    tick={{ fontSize: 12 }}
+                    style={{ fill: 'currentColor' }}
                   />
                   <Tooltip 
-                    contentStyle={tooltipStyle}
-                    formatter={(value: number) => [`${value} uds`, 'Cantidad']}
+                    contentStyle={{ 
+                      backgroundColor: 'var(--tooltip-bg, #fff)', 
+                      border: '1px solid var(--tooltip-border, #e5e7eb)',
+                      borderRadius: '8px'
+                    }}
                   />
-                  <Bar 
-                    dataKey="cantidad" 
-                    radius={[0, 4, 4, 0]}
-                    animationDuration={1500}
-                  >
-                    {stats.topPlatos.slice(0, 10).map((_, index) => (
+                  <Bar dataKey="cantidad" radius={[0, 4, 4, 0]} animationDuration={1500}>
+                    {stats.topPlatos.slice(0, 8).map((plato, index) => (
                       <Cell 
-                        key={`cell-${index}`} 
-                        fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16', '#06B6D4', '#A855F7'][index % 10]} 
+                        key={`${plato.nombre}-bar`} 
+                        fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8]} 
                       />
                     ))}
                   </Bar>
@@ -239,7 +290,7 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
         >
           <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
             <Euro className="w-5 h-5" />
-            Ingresos por plato
+            Ingresos por plato (este mes)
           </h2>
           
           {stats?.topPlatos && stats.topPlatos.length > 0 ? (
@@ -248,7 +299,7 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart key={`pie-${mountKey}`}>
                     <Pie
-                      data={stats.topPlatos.slice(0, 10)}
+                      data={stats.topPlatos.slice(0, 8)}
                       cx="50%"
                       cy="50%"
                       innerRadius={50}
@@ -258,28 +309,32 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
                       nameKey="nombre"
                       animationDuration={1500}
                     >
-                      {stats.topPlatos.slice(0, 10).map((_, index) => (
+                      {stats.topPlatos.slice(0, 8).map((plato, index) => (
                         <Cell 
-                          key={`cell-${index}`} 
-                          fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16', '#06B6D4', '#A855F7'][index % 10]} 
+                          key={`${plato.nombre}-pie`} 
+                          fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8]} 
                         />
                       ))}
                     </Pie>
                     <Tooltip 
-                      contentStyle={tooltipStyle}
-                      formatter={(value: number) => [`${value.toFixed(2)}€`, 'Ingreso']}
+                      formatter={(value: number) => `${value.toFixed(2)}€`}
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px'
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex flex-wrap justify-center gap-3 mt-2 px-2">
-                {stats.topPlatos.slice(0, 10).map((plato, index) => (
-                  <div key={plato.nombre} className="flex items-center gap-2">
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {stats.topPlatos.slice(0, 6).map((plato, index) => (
+                  <div key={plato.nombre} className="flex items-center gap-2 text-sm">
                     <div 
-                      className="w-3 h-3 rounded-full shrink-0"
-                      style={{ backgroundColor: ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16', '#06B6D4', '#A855F7'][index % 10] }}
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6'][index % 6] }}
                     />
-                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[100px]">{plato.nombre}</span>
+                    <span className="truncate text-gray-600 dark:text-gray-300">{plato.nombre}</span>
                   </div>
                 ))}
               </div>
@@ -293,15 +348,4 @@ function EstadisticasContent({ mountKey }: { mountKey: number }) {
       </div>
     </div>
   );
-}
-
-export default function EstadisticasPage() {
-  const pathname = usePathname();
-  const [pageKey, setPageKey] = useState(0);
-
-  useEffect(() => {
-    setPageKey(prev => prev + 1);
-  }, [pathname]);
-
-  return <EstadisticasContent mountKey={pageKey} />;
 }

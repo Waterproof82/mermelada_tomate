@@ -1,198 +1,119 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+import { pedidoRepository } from '@/core/infrastructure/database';
+import { requireAuth, successResponse, errorResponse, validationErrorResponse } from '@/core/infrastructure/api/helpers';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const pedidoIdSchema = z.object({
+  id: z.string().uuid(),
+});
 
-const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
+const updatePedidoSchema = z.object({
+  id: z.string().uuid(),
+  estado: z.enum(['pendiente', 'aceptado', 'preparando', 'enviado', 'entregado', 'cancelado']),
+});
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
-
-    const { data: pedidos, error } = await supabase
-      .from('pedidos')
-      .select(`
-        *,
-        clientes:cliente_id (nombre, email, telefono)
-      `)
-      .eq('empresa_id', perfil.empresa_id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ pedidos });
-  } catch (error) {
-    console.error('Error fetching pedidos:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    const pedidos = await pedidoRepository.findAllByTenant(empresaId!);
+    return successResponse({ pedidos });
+  } catch {
+    return errorResponse('Error al obtener pedidos');
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
+
+  const body = await request.json();
+  const parsed = updatePedidoSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.errors[0].message);
+  }
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
-
-    const body = await request.json();
-    const { id, estado } = body;
-
-    const { error } = await supabase
-      .from('pedidos')
-      .update({ estado })
-      .eq('id', id)
-      .eq('empresa_id', perfil.empresa_id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error updating pedido:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    await pedidoRepository.updateStatus(parsed.data.id, empresaId!, parsed.data.estado);
+    return successResponse({ success: true });
+  } catch {
+    return errorResponse('Error al actualizar pedido');
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
+
+  const body = await request.json();
+  const parsed = pedidoIdSchema.safeParse({ id: body.id });
+
+  if (!parsed.success) {
+    return validationErrorResponse('ID inválido');
+  }
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
-
-    const body = await request.json();
-    const { id } = body;
-
-    const { error } = await supabase
-      .from('pedidos')
-      .delete()
-      .eq('id', id)
-      .eq('empresa_id', perfil.empresa_id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting pedido:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    // Note: delete not in repository yet, need to add
+    const { getSupabaseClient } = await import('@/core/infrastructure/database/supabase-client');
+    const supabase = getSupabaseClient();
+    await supabase.from('pedidos').delete().eq('id', parsed.data.id).eq('empresa_id', empresaId);
+    return successResponse({ success: true });
+  } catch {
+    return errorResponse('Error al eliminar pedido');
   }
 }
 
-export async function PUT() {
+export async function PUT(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
+    const { searchParams } = new URL(request.url);
+    const mesParam = searchParams.get('mes');
+    const añoParam = searchParams.get('año');
 
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const selectedMonth = mesParam ? Number.parseInt(mesParam) : now.getMonth();
+    const selectedYear = añoParam ? Number.parseInt(añoParam) : now.getFullYear();
 
-    const { data: pedidos, error } = await supabase
+    const todayStart = new Date(selectedYear, selectedMonth, now.getDate()).toISOString();
+    const monthStart = new Date(selectedYear, selectedMonth, 1).toISOString();
+    const monthEnd = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59).toISOString();
+    const yearStart = new Date(selectedYear, 0, 1).toISOString();
+
+    const { getSupabaseClient } = await import('@/core/infrastructure/database/supabase-client');
+    const supabase = getSupabaseClient();
+
+    const { data: pedidos } = await supabase
       .from('pedidos')
       .select('*')
-      .eq('empresa_id', perfil.empresa_id);
+      .eq('empresa_id', empresaId);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    const pedidosFiltrados = pedidos || [];
 
-    const pedidosHoy = pedidos?.filter(p => new Date(p.created_at) >= new Date(todayStart)) || [];
-    const pedidosMes = pedidos?.filter(p => new Date(p.created_at) >= new Date(monthStart)) || [];
+    const pedidosHoy = pedidosFiltrados.filter(p => {
+      const fecha = new Date(p.created_at);
+      return fecha >= new Date(todayStart) && fecha <= new Date(monthEnd);
+    });
+    const pedidosMes = pedidosFiltrados.filter(p => new Date(p.created_at) >= new Date(monthStart) && new Date(p.created_at) <= new Date(monthEnd));
+    const pedidosAno = pedidosFiltrados.filter(p => new Date(p.created_at) >= new Date(yearStart));
 
     const totalHoy = pedidosHoy.reduce((sum, p) => sum + (p.total || 0), 0);
     const totalMes = pedidosMes.reduce((sum, p) => sum + (p.total || 0), 0);
+    const totalAno = pedidosAno.reduce((sum, p) => sum + (p.total || 0), 0);
 
     const dishCount: Record<string, { nombre: string; cantidad: number; total: number }> = {};
     pedidosMes.forEach(pedido => {
       if (pedido.detalle_pedido) {
-        pedido.detalle_pedido.forEach((item: any) => {
-          const key = item.nombre;
+        pedido.detalle_pedido.forEach((item: Record<string, unknown>) => {
+          const key = String(item.nombre);
           if (!dishCount[key]) {
-            dishCount[key] = { nombre: item.nombre, cantidad: 0, total: 0 };
+            dishCount[key] = { nombre: key, cantidad: 0, total: 0 };
           }
-          dishCount[key].cantidad += item.cantidad || 1;
-          dishCount[key].total += (item.precio * (item.cantidad || 1));
+          dishCount[key].cantidad += Number(item.cantidad) || 1;
+          dishCount[key].total += (Number(item.precio) * (Number(item.cantidad) || 1));
         });
       }
     });
@@ -201,15 +122,35 @@ export async function PUT() {
       .sort((a, b) => b.cantidad - a.cantidad)
       .slice(0, 10);
 
-    return NextResponse.json({
+    const dishCountAno: Record<string, { nombre: string; cantidad: number; total: number }> = {};
+    pedidosAno.forEach(pedido => {
+      if (pedido.detalle_pedido) {
+        pedido.detalle_pedido.forEach((item: Record<string, unknown>) => {
+          const key = String(item.nombre);
+          if (!dishCountAno[key]) {
+            dishCountAno[key] = { nombre: key, cantidad: 0, total: 0 };
+          }
+          dishCountAno[key].cantidad += Number(item.cantidad) || 1;
+          dishCountAno[key].total += (Number(item.precio) * (Number(item.cantidad) || 1));
+        });
+      }
+    });
+
+    const topPlatosAno = Object.values(dishCountAno)
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .slice(0, 10);
+
+    return successResponse({
       pedidosHoy: pedidosHoy.length,
       pedidosMes: pedidosMes.length,
       totalHoy,
       totalMes,
+      totalAno,
       topPlatos,
+      topPlatosAno,
+      mesSeleccionado: `${selectedMonth}-${selectedYear}`,
     });
-  } catch (error) {
-    console.error('Error fetching statistics:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  } catch {
+    return errorResponse('Error al obtener estadísticas');
   }
 }

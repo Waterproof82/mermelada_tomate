@@ -43,10 +43,61 @@ export function CartDrawer() {
   const { language } = useLanguage()
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [companyPhone, setCompanyPhone] = useState<string | null>(null)
+  const [orderNumber, setOrderNumber] = useState<number | null>(null)
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [email, setEmail] = useState('')
   const [errors, setErrors] = useState<{ nombre?: string; telefono?: string }>({})
+
+  const isMobileDevice = () => {
+    const userAgent = navigator.userAgent;
+    const isTouchDevice = navigator.maxTouchPoints > 0;
+    const isAndroid = /Android/i.test(userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+    return isTouchDevice || isAndroid || isIOS;
+  };
+
+  const abrirWhatsApp = (numero: string, mensaje: string) => {
+    const textoEncoded = encodeURIComponent(mensaje);
+    const appUrl = `whatsapp://send?phone=${numero}&text=${textoEncoded}`;
+    const webUrl = `https://wa.me/${numero}?text=${textoEncoded}`;
+    const esMobile = isMobileDevice();
+
+    if (esMobile) {
+      window.location.href = appUrl;
+      setTimeout(() => {
+        if (!document.hasFocus()) return;
+        window.location.href = webUrl;
+      }, 1500);
+      return;
+    }
+
+    const anchor = document.createElement('a');
+    anchor.href = appUrl;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  };
+
+  const handleWhatsAppClick = (useWeb: boolean = false) => {
+    const link = (window as any).__whatsappLink;
+    if (!link) return;
+    const match = link.match(/wa\.me\/(\d+)\?text=(.+)/);
+    if (match) {
+      const numero = match[1];
+      const mensaje = decodeURIComponent(match[2]);
+      const textoEncoded = encodeURIComponent(mensaje);
+      
+      if (useWeb) {
+        window.open(`https://wa.me/${numero}?text=${textoEncoded}`, '_blank');
+      } else {
+        abrirWhatsApp(numero, mensaje);
+      }
+    }
+  };
 
   const validateName = (name: string): string | undefined => {
     const trimmed = name.trim();
@@ -110,10 +161,38 @@ export function CartDrawer() {
       const data = await res.json();
       
       if (res.ok) {
-        setSent(true);
+        setConfirming(true);
         setNombre('');
         setTelefono('');
         setEmail('');
+        
+        if (data.whatsappLink) {
+          (window as any).__whatsappLink = data.whatsappLink;
+          const match = data.whatsappLink.match(/wa\.me\/(\d+)\?text=(.+)/);
+          if (match) {
+            const numero = match[1];
+            const mensaje = decodeURIComponent(match[2]);
+            setCompanyPhone(data.companyPhone || null);
+            setOrderNumber(data.numeroPedido || null); // <-- Added this line
+            setSent(true);
+            setTimeout(() => {
+              setConfirming(false);
+              abrirWhatsApp(numero, mensaje);
+            }, 100);
+          } else {
+            setSent(true);
+            setConfirming(false);
+          }
+        } else {
+          setSent(true);
+          setConfirming(false);
+        }
+        if (data.companyPhone) {
+          setCompanyPhone(data.companyPhone);
+        }
+        if (data.numeroPedido) { // <-- Added this block
+          setOrderNumber(data.numeroPedido);
+        }
       } else {
         setErrors({ nombre: data.error || t("validationOrderError", language) });
       }
@@ -130,6 +209,7 @@ export function CartDrawer() {
       <Dialog open={sent} onOpenChange={(open) => {
         if (!open) {
           setSent(false)
+          setConfirming(false)
           clearCart()
           closeCart()
         }
@@ -138,12 +218,40 @@ export function CartDrawer() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-green-600">
               <span className="text-2xl">✓</span>
-              {t("orderReceivedTitle", language)}
+              {t("sendingOrder", language)}
             </DialogTitle>
             <DialogDescription className="text-base">
-              {t("orderReceivedMessage", language)}
+              {confirming ? t("sendingOrder", language) : t("whatsappCheck", language)}
             </DialogDescription>
+            {confirming && companyPhone && (
+              <p className="text-xs text-red-500 mt-2 text-center">
+                {t("whatsappFallback", language)} {companyPhone}
+              </p>
+            )}
           </DialogHeader>
+          {!confirming && (
+            <>
+              <button
+                onClick={() => handleWhatsAppClick(false)}
+                className="block w-full text-center bg-[#25D366] text-white py-3 px-4 rounded-full font-semibold hover:bg-[#20BD5A] transition-colors"
+              >
+                {t("whatsappResend", language)}
+              </button>
+              <button
+                onClick={() => handleWhatsAppClick(true)}
+                className="block w-full text-center text-[#25D366] text-sm py-2 font-medium hover:underline"
+              >
+                {t("whatsappWeb", language)}
+              </button>
+            </>
+          )}
+          {companyPhone && orderNumber && (
+            <div className="bg-black text-white p-3 rounded-lg mt-4 w-full text-center">
+              <p className="text-xs font-medium">
+                * {t("whatsappCantSend", language)} {companyPhone} con pedido #{orderNumber}
+              </p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -293,14 +401,10 @@ export function CartDrawer() {
                 <Button 
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full py-3 text-lg font-semibold shadow-md transition-all duration-200"
                   size="lg"
-                  onClick={handleConfirmOrder}
-                  disabled={sending || sent}
+                  onClick={() => { closeCart(); handleConfirmOrder(); }}
+                  disabled={sending || confirming}
                 >
-                  {(() => {
-                    if (sending) return 'Enviando...';
-                    if (sent) return '¡Pedido enviado!';
-                    return t("confirmOrder", language);
-                  })()}
+                  {sending || confirming ? t("sending", language) : t("sendOrder", language)}
                 </Button>
                 <Button
                   variant="ghost"

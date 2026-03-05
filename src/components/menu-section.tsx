@@ -4,17 +4,10 @@ import { useState, memo, useCallback } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
-import { useLanguage, type Language } from "@/lib/language-context"
+import { useLanguage } from "@/lib/language-context"
 import { t } from "@/lib/translations"
 import { MenuCategoryVM, MenuItemVM, MenuSubcategoryVM } from "@/core/application/dtos/menu-view-model"
 import { QuantitySelectorDialog } from "@/components/quantity-selector-dialog"
-
-interface Complement {
-  id: string;
-  name: string;
-  price: number;
-  description?: string;
-}
 
 type LanguageKey = 'en' | 'fr' | 'it' | 'de';
 
@@ -36,7 +29,6 @@ export const MenuSection = memo(function MenuSection(props: Readonly<MenuSection
 
   const isCategoryWithComplements = category.items.some((item) => item.complements && item.complements.length > 0);
   const translationLang = (['en', 'fr', 'it', 'de'].includes(language) ? language : undefined) as LanguageKey | undefined;
-  const safeLanguage: Language = language || "es";
 
   const displayDescripcion = translationLang && category.descripcionTranslations?.[translationLang]
     ? category.descripcionTranslations[translationLang]
@@ -205,7 +197,7 @@ const MenuItemCard = memo(function MenuItemCard(props: Readonly<{
           <div className="flex flex-col gap-1 items-end shrink-0">
             {item.highlight && (
               <Badge variant="secondary" className="bg-accent/10 text-accent text-[10px]">
-                Especial
+                {t("especial", safeLanguage)}
               </Badge>
             )}
           </div>

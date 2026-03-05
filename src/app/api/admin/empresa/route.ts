@@ -1,89 +1,48 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest } from 'next/server';
+import { empresaRepository } from '@/core/infrastructure/database';
+import { updateEmpresaSchema } from '@/core/application/dtos/empresa.dto';
+import { requireAuth, successResponse, errorResponse, validationErrorResponse } from '@/core/infrastructure/api/helpers';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+export async function GET(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
-const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
-
-export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const empresa = await empresaRepository.getById(empresaId!);
+    if (!empresa) {
+      return errorResponse('Empresa no encontrada', 404);
     }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
-
-    const { data: empresa } = await supabase
-      .from('empresas')
-      .select('email_notification')
-      .eq('id', perfil.empresa_id)
-      .single();
-
-    return NextResponse.json({
-      email_notification: empresa?.email_notification || '',
+    
+    return successResponse({
+      email_notification: empresa.emailNotification || '',
+      telefono_whatsapp: '',
+      nombre: empresa.nombre || '',
+      logo_url: empresa.logoUrl || null,
+      fb: '',
+      instagram: '',
+      url_mapa: '',
+      direccion: '',
     });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  } catch {
+    return errorResponse('Error al obtener empresa');
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
+
+  const body = await request.json();
+  const parsed = updateEmpresaSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.errors[0].message);
+  }
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
-
-    const body = await request.json();
-    const { email_notification } = body;
-
-    const { error } = await supabase
-      .from('empresas')
-      .update({ email_notification })
-      .eq('id', perfil.empresa_id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    await empresaRepository.update(empresaId!, parsed.data);
+    return successResponse({ success: true });
+  } catch {
+    return errorResponse('Error al actualizar empresa');
   }
 }

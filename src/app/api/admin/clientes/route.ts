@@ -1,204 +1,78 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest } from 'next/server';
+import { clienteUseCase } from '@/core/infrastructure/database';
+import { createClienteSchema, updateClienteSchema, clienteIdSchema } from '@/core/application/dtos/cliente.dto';
+import { requireAuth, successResponse, errorResponse, validationErrorResponse } from '@/core/infrastructure/api/helpers';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+export async function GET(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
-const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
-
-export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
-
-    const { data: clientes, error } = await supabase
-      .from('clientes')
-      .select('*')
-      .eq('empresa_id', perfil.empresa_id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ clientes });
-  } catch (error) {
-    console.error('Error fetching clientes:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    const clientes = await clienteUseCase.getAll(empresaId!);
+    return successResponse({ clientes });
+  } catch {
+    return errorResponse('Error al obtener clientes');
   }
 }
 
-export async function PATCH(request: Request) {
+export async function POST(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
+
+  const body = await request.json();
+  const parsed = createClienteSchema.safeParse({ ...body, empresaId });
+
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.errors[0].message);
+  }
+
+  if (!parsed.data.nombre && !parsed.data.email && !parsed.data.telefono) {
+    return validationErrorResponse('Al menos un campo es requerido');
+  }
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
-
-    const body = await request.json();
-    const { id, nombre, email, telefono, direccion, aceptar_promociones } = body;
-
-    const updateData: Record<string, any> = {};
-    if (nombre !== undefined) updateData.nombre = nombre;
-    if (email !== undefined) updateData.email = email;
-    if (telefono !== undefined) updateData.telefono = telefono;
-    if (direccion !== undefined) updateData.direccion = direccion;
-    if (aceptar_promociones !== undefined) updateData.aceptar_promociones = aceptar_promociones;
-
-    const { error } = await supabase
-      .from('clientes')
-      .update(updateData)
-      .eq('id', id)
-      .eq('empresa_id', perfil.empresa_id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error updating cliente:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    const cliente = await clienteUseCase.create(parsed.data);
+    return successResponse({ cliente }, 201);
+  } catch {
+    return errorResponse('Error al crear cliente');
   }
 }
 
-export async function POST(request: Request) {
+export async function PATCH(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
+
+  const body = await request.json();
+  const parsed = updateClienteSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.errors[0].message);
+  }
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
-
-    const body = await request.json();
-    const { nombre, email, telefono, direccion } = body;
-
-    if (!nombre && !email && !telefono) {
-      return NextResponse.json({ error: 'Al menos un campo es requerido' }, { status: 400 });
-    }
-
-    const { data: cliente, error } = await supabase
-      .from('clientes')
-      .insert({
-        empresa_id: perfil.empresa_id,
-        nombre: nombre || null,
-        email: email || null,
-        telefono: telefono || null,
-        direccion: direccion || null,
-        aceptar_promociones: false,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ cliente });
-  } catch (error) {
-    console.error('Error creating cliente:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    const { id, ...updateData } = parsed.data;
+    await clienteUseCase.update(id, empresaId!, updateData);
+    return successResponse({ success: true });
+  } catch {
+    return errorResponse('Error al actualizar cliente');
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
+
+  const body = await request.json();
+  const parsed = clienteIdSchema.safeParse({ id: body.id });
+
+  if (!parsed.success) {
+    return validationErrorResponse('ID inválido');
+  }
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
-    const adminId = payload.adminId as string;
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: perfil } = await supabase
-      .from('perfiles_admin')
-      .select('empresa_id')
-      .eq('id', adminId)
-      .single();
-
-    if (!perfil) {
-      return NextResponse.json({ error: 'Admin no encontrado' }, { status: 404 });
-    }
-
-    const body = await request.json();
-    const { id } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
-    }
-
-    const { error } = await supabase
-      .from('clientes')
-      .delete()
-      .eq('id', id)
-      .eq('empresa_id', perfil.empresa_id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting cliente:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    await clienteUseCase.delete(parsed.data.id, empresaId!);
+    return successResponse({ success: true });
+  } catch {
+    return errorResponse('Error al eliminar cliente');
   }
 }

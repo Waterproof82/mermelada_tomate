@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode } from "react"
+import { ReactNode } from "react"
 import { MenuCategoryVM } from "@/core/application/dtos/menu-view-model"
 import { HeroBanner } from "@/components/hero-banner"
 import { CategoryNav } from "@/components/category-nav"
@@ -18,7 +18,7 @@ interface MenuPageProps {
 
 export function MenuPage({ menuData, header, showCart = false, empresa }: MenuPageProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background" suppressHydrationWarning>
       {typeof header !== 'undefined' ? header : null}
       <main className="flex-1">
         <HeroBanner empresa={empresa} />

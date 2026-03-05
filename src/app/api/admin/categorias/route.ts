@@ -1,170 +1,83 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest } from 'next/server';
+import { categoryUseCase } from '@/core/infrastructure/database';
+import { createCategorySchema, updateCategorySchema, categoryIdSchema } from '@/core/application/dtos/category.dto';
+import { requireAuth, successResponse, errorResponse, validationErrorResponse } from '@/core/infrastructure/api/helpers';
 
-const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
-
-async function getAdminEmpresaId() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('admin_token')?.value;
-
-  if (!token) return null;
+export async function GET(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   try {
-    const secret = new TextEncoder().encode(ADMIN_TOKEN_SECRET);
-    const { payload } = await jwtVerify(token, secret);
-    return payload.empresaId as string;
+    const categories = await categoryUseCase.getAll(empresaId!);
+    return successResponse(categories);
   } catch {
-    return null;
+    return errorResponse('Error al obtener categorías');
   }
-}
-
-export async function GET() {
-  const empresaId = await getAdminEmpresaId();
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  const { data, error } = await supabase
-    .from('categorias')
-    .select('*')
-    .eq('empresa_id', empresaId)
-    .order('orden', { ascending: true });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data || []);
 }
 
 export async function POST(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   const body = await request.json();
-  const { nombre_es, nombre_en, nombre_fr, nombre_it, nombre_de, descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de, orden, categoria_complemento_de, complemento_obligatorio } = body;
+  const parsed = createCategorySchema.safeParse({ ...body, empresaId });
 
-  if (!nombre_es) {
-    return NextResponse.json({ error: 'El nombre en español es requerido' }, { status: 400 });
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.errors[0].message);
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  const { data, error } = await supabase
-    .from('categorias')
-    .insert({
-      empresa_id: empresaId,
-      nombre_es,
-      nombre_en: nombre_en || null,
-      nombre_fr: nombre_fr || null,
-      nombre_it: nombre_it || null,
-      nombre_de: nombre_de || null,
-      descripcion_es: descripcion_es || null,
-      descripcion_en: descripcion_en || null,
-      descripcion_fr: descripcion_fr || null,
-      descripcion_it: descripcion_it || null,
-      descripcion_de: descripcion_de || null,
-      orden: orden || 0,
-      categoria_complemento_de: categoria_complemento_de || null,
-      complemento_obligatorio: complemento_obligatorio || false,
-      categoria_padre_id: body.categoria_padre_id || null,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const category = await categoryUseCase.create(parsed.data);
+    return successResponse(category, 201);
+  } catch {
+    return errorResponse('Error al crear categoría');
   }
-
-  return NextResponse.json(data);
 }
 
 export async function PUT(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const idParam = searchParams.get('id');
+  const idParsed = categoryIdSchema.safeParse({ id: idParam });
 
-  if (!id) {
-    return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+  if (!idParsed.success) {
+    return validationErrorResponse('ID inválido');
   }
 
   const body = await request.json();
-  const { nombre_es, nombre_en, nombre_fr, nombre_it, nombre_de, descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de, orden, categoria_complemento_de, complemento_obligatorio, categoria_padre_id } = body;
+  const { id: _bodyId, ...updateData } = body;
+  const parsed = updateCategorySchema.safeParse(updateData);
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  const { data, error } = await supabase
-    .from('categorias')
-    .update({
-      nombre_es,
-      nombre_en: nombre_en || null,
-      nombre_fr: nombre_fr || null,
-      nombre_it: nombre_it || null,
-      nombre_de: nombre_de || null,
-      descripcion_es: descripcion_es || null,
-      descripcion_en: descripcion_en || null,
-      descripcion_fr: descripcion_fr || null,
-      descripcion_it: descripcion_it || null,
-      descripcion_de: descripcion_de || null,
-      orden: orden || 0,
-      categoria_complemento_de: categoria_complemento_de || null,
-      complemento_obligatorio: complemento_obligatorio || false,
-      categoria_padre_id: categoria_padre_id || null,
-    })
-    .eq('id', id)
-    .eq('empresa_id', empresaId)
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.errors[0].message);
   }
 
-  return NextResponse.json(data);
+  try {
+    const category = await categoryUseCase.update(idParsed.data.id, empresaId!, parsed.data);
+    return successResponse(category);
+  } catch {
+    return errorResponse('Error al actualizar categoría');
+  }
 }
 
 export async function DELETE(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const idParam = searchParams.get('id');
+  const idParsed = categoryIdSchema.safeParse({ id: idParam });
 
-  if (!id) {
-    return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+  if (!idParsed.success) {
+    return validationErrorResponse('ID inválido');
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  const { error } = await supabase
-    .from('categorias')
-    .delete()
-    .eq('id', id)
-    .eq('empresa_id', empresaId);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await categoryUseCase.delete(idParsed.data.id, empresaId!);
+    return successResponse({ success: true });
+  } catch {
+    return errorResponse('Error al eliminar categoría');
   }
-
-  return NextResponse.json({ success: true });
 }

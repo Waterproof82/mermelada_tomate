@@ -1,28 +1,44 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminRepository } from '@/core/infrastructure/database/SupabaseAdminRepository';
+import { z } from 'zod';
 
-const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
+function getEmpresaId(request: NextRequest): string | null {
+  return request.headers.get('x-empresa-id');
+}
 
-export async function POST(request: Request) {
+const coloresSchema = z.object({
+  primary: z.string(),
+  primaryForeground: z.string(),
+  secondary: z.string(),
+  secondaryForeground: z.string(),
+  accent: z.string(),
+  accentForeground: z.string(),
+  background: z.string(),
+  foreground: z.string(),
+});
+
+const updateColoresSchema = z.object({
+  colores: coloresSchema,
+});
+
+export async function POST(request: NextRequest) {
+  const empresaId = getEmpresaId(request);
+  if (!empresaId) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(ADMIN_TOKEN_SECRET));
     const body = await request.json();
-    const { empresaId, colores } = body;
+    const parsed = updateColoresSchema.safeParse(body);
 
-    if (payload.empresaId !== empresaId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors[0].message },
+        { status: 400 }
+      );
     }
 
-    const success = await adminRepository.updateColores(empresaId, colores);
+    const success = await adminRepository.updateColores(empresaId, parsed.data.colores);
 
     if (!success) {
       return NextResponse.json({ error: 'Error al guardar' }, { status: 500 });

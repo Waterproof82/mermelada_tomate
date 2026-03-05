@@ -1,4 +1,4 @@
-import { IStorageRepository, UploadResult } from "@/domain/repositories/IStorageRepository";
+import { IStorageRepository, UploadResult } from "@/core/domain/repositories/IStorageRepository";
 import { getPresignedUploadUrlAction, deleteFileAction } from "./actions";
 
 export class R2StorageRepository implements IStorageRepository {
@@ -32,8 +32,8 @@ export class R2StorageRepository implements IStorageRepository {
 
       // 3. Retornar los datos del archivo guardado
       return {
-        key: key!,
-        publicUrl: publicUrl!,
+        key: key || "",
+        publicUrl: publicUrl || "",
       };
 
     } catch (error) {

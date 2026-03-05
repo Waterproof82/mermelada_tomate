@@ -65,6 +65,12 @@ export interface EmpresaInfo {
     it?: string;
     de?: string;
   } | null;
+  fb: string | null;
+  instagram: string | null;
+  urlMapa: string | null;
+  direccion: string | null;
+  telefono: string | null;
+  emailNotification: string | null;
 }
 
 function mapTranslations(data: any, prefix: string) {
@@ -79,8 +85,23 @@ function mapTranslations(data: any, prefix: string) {
     : null;
 }
 
+function parseMainDomain(domain: string): string {
+  const domainParts = domain.split('.');
+  if (domainParts.length >= 2) {
+    // Si tiene subdominio (ej: pedidos.localhost o pedidos.dominio.com)
+    const potentialSubdomain = domainParts[0];
+    if (potentialSubdomain === 'pedidos' || potentialSubdomain.endsWith('-pedidos')) {
+      return domainParts.slice(1).join('.');
+    }
+  }
+  return domain;
+}
+
 export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | null> {
-  const { data, error } = await supabase
+  const mainDomain = parseMainDomain(domain);
+  
+  // Buscar primero por dominio exacto
+  let { data, error } = await supabase
     .from("empresas")
     .select(`
       id, nombre, dominio, mostrar_carrito, moneda, subdomain_pedidos, 
@@ -91,10 +112,42 @@ export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | 
       titulo, subtitulo,
       subtitulo2_es, subtitulo2_en, subtitulo2_fr, subtitulo2_it, subtitulo2_de,
       footer1_es, footer1_en, footer1_fr, footer1_it, footer1_de,
-      footer2_es, footer2_en, footer2_fr, footer2_it, footer2_de
+      footer2_es, footer2_en, footer2_fr, footer2_it, footer2_de,
+      fb, instagram, url_mapa,
+      direccion, telefono_whatsapp, email_notification
     `)
-    .ilike("dominio", domain)
+    .eq("dominio", mainDomain)
     .maybeSingle();
+
+  // Si no encuentra, buscar por subdominio pedidos
+  if (!data) {
+    const subdomainPedidos = 'pedidos';
+    const isPedidos = domain.startsWith(`${subdomainPedidos}.`) || domain.includes('-pedidos');
+    if (isPedidos) {
+      // Extraer el dominio principal del subdominio
+      const mainDomain = extractMainDomain(domain, subdomainPedidos);
+      
+      const { data: subdomainData } = await supabase
+        .from("empresas")
+        .select(`
+          id, nombre, dominio, mostrar_carrito, moneda, subdomain_pedidos, 
+          logo_url, url_image, 
+          color_primary, color_primary_foreground, color_secondary, color_secondary_foreground,
+          color_accent, color_accent_foreground, color_background, color_foreground,
+          descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de,
+          titulo, subtitulo,
+          subtitulo2_es, subtitulo2_en, subtitulo2_fr, subtitulo2_it, subtitulo2_de,
+          footer1_es, footer1_en, footer1_fr, footer1_it, footer1_de,
+          footer2_es, footer2_en, footer2_fr, footer2_it, footer2_de,
+          fb, instagram, url_mapa,
+          direccion, telefono_whatsapp, email_notification
+        `)
+        .eq("dominio", mainDomain)
+        .maybeSingle();
+      
+      if (subdomainData) data = subdomainData;
+    }
+  }
 
   if (error || !data) return null;
 
@@ -127,12 +180,21 @@ export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | 
     subtitulo2: mapTranslations(data, 'subtitulo2'),
     footer1: mapTranslations(data, 'footer1'),
     footer2: mapTranslations(data, 'footer2'),
+    fb: data.fb ?? null,
+    instagram: data.instagram ?? null,
+    urlMapa: data.url_mapa ?? null,
+    direccion: data.direccion ?? null,
+    telefono: data.telefono_whatsapp ?? null,
+    emailNotification: data.email_notification ?? null,
   };
 }
 
 export function isPedidosSubdomain(currentDomain: string, subdomainConfig: string | null): boolean {
   if (!subdomainConfig) return false;
-  return currentDomain.startsWith(`${subdomainConfig}.`);
+  const config = subdomainConfig.split('.')[0]; // "pedidos.localhost" -> "pedidos"
+  const domainParts = currentDomain.split('.');
+  // Comprobar si el inicio del dominio coincide con la config
+  return domainParts[0] === config || currentDomain.startsWith(`${subdomainConfig}.`);
 }
 
 export function extractMainDomain(fullDomain: string, subdomainConfig: string | null): string {

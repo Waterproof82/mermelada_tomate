@@ -1,10 +1,12 @@
 "use client";
 
 import { ShoppingCart } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
 import { t } from "@/lib/translations";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useCart } from "@/lib/cart-context";
 import type { EmpresaInfo } from "@/lib/server-services";
 
@@ -21,8 +23,10 @@ export function SiteHeaderClient({ showCart, empresa }: SiteHeaderClientProps) {
     openCart();
   };
  
+  const prevTotalItemsRef = useRef(totalItems);
+
   useEffect(() => {
-    if (totalItems > 0) {
+    if (prevTotalItemsRef.current !== totalItems && totalItems > 0) {
       setAnimate(false);
       const timeout = setTimeout(() => setAnimate(true), 10);
       const timeout2 = setTimeout(() => setAnimate(false), 1000);
@@ -31,6 +35,7 @@ export function SiteHeaderClient({ showCart, empresa }: SiteHeaderClientProps) {
         clearTimeout(timeout2);
       };
     }
+    prevTotalItemsRef.current = totalItems;
   }, [totalItems]);
 
   const logoUrl = empresa?.logoUrl ?? null;
@@ -38,16 +43,20 @@ export function SiteHeaderClient({ showCart, empresa }: SiteHeaderClientProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:h-20 md:px-6">
-        <a href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           {logoUrl && (
-            <img
-              src={logoUrl}
-              alt="Mermelada de Tomate"
-              className="h-12 w-auto md:h-16"
-              loading="eager"
-            />
+            <div className="relative h-12 w-24 md:h-16 md:w-32">
+              <Image
+                src={logoUrl}
+                alt="Mermelada de Tomate"
+                fill
+                className="object-contain"
+                loading="eager"
+                unoptimized
+              />
+            </div>
           )}
-        </a>
+        </Link>
         <div className="flex items-center gap-1">
           <LanguageSelector />
           {showCart ? (

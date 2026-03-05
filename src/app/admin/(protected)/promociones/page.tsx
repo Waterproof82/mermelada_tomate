@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Mail, FileText, Send, CheckCircle } from 'lucide-react';
+import { Users, Mail, FileText, Send, CheckCircle, Image, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAdmin } from '@/lib/admin-context';
+import { uploadImageAction } from '@/core/application/actions/storage.actions';
 
 interface Cliente {
   id: string;
@@ -16,15 +18,19 @@ interface Promocion {
   fecha_hora: string;
   texto_promocion: string;
   numero_envios: number;
+  imagen_url: string | null;
   created_at: string;
 }
 
 export default function PromocionesPage() {
+  const { empresaSlug } = useAdmin();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
-  const [loading, setLoading] = useState(true);
   const [savingPromo, setSavingPromo] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   
   const [promoTexto, setPromoTexto] = useState('');
 
@@ -47,7 +53,7 @@ export default function PromocionesPage() {
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
-        setLoading(false);
+        // Data loaded
       }
     }
     fetchData();
@@ -55,16 +61,68 @@ export default function PromocionesPage() {
 
   const clientesConPromociones = clientes.filter(c => c.aceptar_promociones && c.email);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no puede exceder 5MB');
+        return;
+      }
+      setSelectedImage(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => setPreviewImage(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setPreviewImage(null);
+  };
+
   const handleGuardarPromocion = async () => {
     if (!promoTexto) return;
     
     setSavingPromo(true);
     try {
+      // Upload image to R2 if selected
+      let imagenUrl: string | null = null;
+      if (selectedImage) {
+        setUploadingImage(true);
+        try {
+          // Get upload URL from server
+          const fileName = `promo-${Date.now()}-${selectedImage.name}`;
+          const result = await uploadImageAction(
+            fileName,
+            selectedImage.type,
+            selectedImage.size,
+            empresaSlug
+          );
+          
+          // Upload to R2
+          const uploadRes = await fetch(result.url, {
+            method: 'PUT',
+            body: selectedImage,
+            headers: { 'Content-Type': selectedImage.type },
+          });
+          
+          if (!uploadRes.ok) {
+            throw new Error('Error uploading image');
+          }
+          
+          imagenUrl = result.publicUrl;
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+
       const res = await fetch('/api/admin/promociones', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           texto_promocion: promoTexto,
+          imagen_url: imagenUrl,
         }),
       });
       
@@ -72,11 +130,13 @@ export default function PromocionesPage() {
         const data = await res.json();
         setPromociones(prev => [data.promocion, ...prev]);
         setPromoTexto('');
+        handleRemoveImage();
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
       }
     } catch (error) {
       console.error('Error creating promocion:', error);
+      alert('Error al crear la promoción');
     } finally {
       setSavingPromo(false);
     }
@@ -115,16 +175,64 @@ export default function PromocionesPage() {
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="promo_texto" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Mensaje de la promoción
             </label>
             <textarea
+              id="promo_texto"
               placeholder="Ej: ¡20% de descuento en tu próximo pedido! 🍕"
               value={promoTexto}
               onChange={(e) => setPromoTexto(e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white resize-none"
             />
+          </div>
+
+          {/* Imagen de la promoción */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Imagen de la promoción (opcional)
+            </label>
+            {previewImage ? (
+              <div className="relative group rounded-lg overflow-hidden border h-48 mb-2">
+                <img
+                  src={previewImage}
+                  alt="Preview"
+                  className="w-full h-full object-contain bg-gray-50"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                  id="promo-image"
+                />
+                <label htmlFor="promo-image" className="cursor-pointer">
+                  <Image className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <span className="text-sm text-gray-500">
+                    Click para seleccionar una imagen
+                  </span>
+                  <p className="text-xs text-gray-400 mt-1">
+                    JPEG, PNG, WEBP (max 5MB)
+                  </p>
+                </label>
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Esta imagen se mostrará adjunta en el correo electrónico
+            </p>
           </div>
 
           {/* Vista previa de clientes */}
@@ -171,7 +279,17 @@ export default function PromocionesPage() {
                 disabled={!promoTexto || savingPromo || clientesConPromociones.length === 0}
                 className="bg-primary hover:bg-primary/90"
               >
-                {savingPromo ? 'Guardando...' : 'Guardar y Enviar'}
+                {savingPromo ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {uploadingImage ? 'Subiendo imagen...' : 'Enviando...'}
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Guardar y Enviar
+                  </>
+                )}
               </Button>
             )}
           </div>
@@ -183,20 +301,31 @@ export default function PromocionesPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl border shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            Historial de Promociones
+            Última Promoción
           </h2>
           <div className="space-y-3">
-            {promociones.map((promo) => (
-              <div key={promo.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900 dark:text-white">{promo.texto_promocion}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(promo.fecha_hora).toLocaleString('es-ES')}
-                  </p>
-                </div>
-                <div className="text-right px-4">
-                  <span className="text-2xl font-bold text-primary">{promo.numero_envios}</span>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">clientes</p>
+            {promociones.slice(0, 1).map((promo) => (
+              <div key={promo.id} className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                {promo.imagen_url && (
+                  <div className="mb-3">
+                    <img 
+                      src={promo.imagen_url} 
+                      alt="Promoción" 
+                      className="max-h-32 rounded-lg object-contain bg-white"
+                    />
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 dark:text-white">{promo.texto_promocion}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(promo.fecha_hora).toLocaleString('es-ES')}
+                    </p>
+                  </div>
+                  <div className="text-right px-4">
+                    <span className="text-2xl font-bold text-primary">{promo.numero_envios}</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">clientes</p>
+                  </div>
                 </div>
               </div>
             ))}

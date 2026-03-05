@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useId } from "react"
+import { useState, useRef } from "react"
 import { Plus, Minus, Check } from "lucide-react"
 import {
   Dialog,
@@ -37,18 +37,8 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
   const [selectedComplement, setSelectedComplement] = useState<Complement | null>(null)
   const { language } = useLanguage()
   const { addItem } = useCart()
-  const descriptionId = useId()
 
   const complements = item?.complements || [];
-
-  const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Number.parseInt(event.target.value, 10)
-    if (!Number.isNaN(value) && value >= 1) {
-      setQuantity(value)
-    } else if (event.target.value === "") {
-      setQuantity(0) // Allow empty input temporarily for typing
-    }
-  }
 
   const handleIncrement = () => {
     setQuantity((prev) => prev + 1)
@@ -79,12 +69,16 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
   }
 
   // Reset quantity when dialog opens with a new item or closes
-  useEffect(() => {
-    if (open && item) {
-      setQuantity(1); // Reset to 1 when a new item is selected for the dialog
-      setSelectedComplement(null);
-    }
-  }, [open, item])
+  const previousOpenRef = useRef(open);
+  const previousItemIdRef = useRef(item?.id);
+  
+  if (open && item && (!previousOpenRef.current || previousItemIdRef.current !== item.id)) {
+    setQuantity(1);
+    setSelectedComplement(null);
+  }
+  
+  previousOpenRef.current = open;
+  previousItemIdRef.current = item?.id;
 
   const totalComplementsPrice = selectedComplement ? selectedComplement.price : 0;
   const totalPrice = (item ? item.price + totalComplementsPrice : 0) * quantity;

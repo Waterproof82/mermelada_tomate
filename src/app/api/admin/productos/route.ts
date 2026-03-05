@@ -1,180 +1,84 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+import { productUseCase } from '@/core/infrastructure/database';
+import { createProductSchema, updateProductSchema, productIdSchema } from '@/core/application/dtos/product.dto';
+import { requireAuth, successResponse, errorResponse, validationErrorResponse } from '@/core/infrastructure/api/helpers';
 
-const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
-
-async function getAdminEmpresaId() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('admin_token')?.value;
-
-  if (!token) return null;
+export async function GET(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   try {
-    const secret = new TextEncoder().encode(ADMIN_TOKEN_SECRET);
-    const { payload } = await jwtVerify(token, secret);
-    return payload.empresaId as string;
+    const products = await productUseCase.getAll(empresaId!);
+    return successResponse(products);
   } catch {
-    return null;
+    return errorResponse('Error al obtener productos');
   }
-}
-
-export async function GET() {
-  const empresaId = await getAdminEmpresaId();
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  const { data, error } = await supabase
-    .from('productos')
-    .select('*')
-    .eq('empresa_id', empresaId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data || []);
 }
 
 export async function POST(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   const body = await request.json();
-  const {
-    titulo_es, titulo_en, titulo_fr, titulo_it, titulo_de,
-    descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de,
-    precio, foto_url, categoria_id, es_especial, activo
-  } = body;
+  const parsed = createProductSchema.safeParse({ ...body, empresaId });
 
-  if (!titulo_es || !precio) {
-    return NextResponse.json({ error: 'Título y precio son requeridos' }, { status: 400 });
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.errors[0].message);
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  const { data, error } = await supabase
-    .from('productos')
-    .insert({
-      empresa_id: empresaId,
-      titulo_es,
-      titulo_en: titulo_en || null,
-      titulo_fr: titulo_fr || null,
-      titulo_it: titulo_it || null,
-      titulo_de: titulo_de || null,
-      descripcion_es: descripcion_es || null,
-      descripcion_en: descripcion_en || null,
-      descripcion_fr: descripcion_fr || null,
-      descripcion_it: descripcion_it || null,
-      descripcion_de: descripcion_de || null,
-      precio: parseFloat(precio),
-      foto_url: foto_url || null,
-      categoria_id: categoria_id || null,
-      es_especial: es_especial || false,
-      activo: activo !== false,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const product = await productUseCase.create(parsed.data);
+    return successResponse(product, 201);
+  } catch {
+    return errorResponse('Error al crear producto');
   }
-
-  return NextResponse.json(data);
 }
 
 export async function PUT(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const idParam = searchParams.get('id');
+  const idParsed = productIdSchema.safeParse({ id: idParam });
 
-  if (!id) {
-    return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+  if (!idParsed.success) {
+    return validationErrorResponse('ID inválido');
   }
 
   const body = await request.json();
-  const {
-    titulo_es, titulo_en, titulo_fr, titulo_it, titulo_de,
-    descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de,
-    precio, foto_url, categoria_id, es_especial, activo
-  } = body;
+  const { id: _bodyId, ...updateData } = body;
+  const parsed = updateProductSchema.safeParse(updateData);
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  const { data, error } = await supabase
-    .from('productos')
-    .update({
-      titulo_es,
-      titulo_en: titulo_en || null,
-      titulo_fr: titulo_fr || null,
-      titulo_it: titulo_it || null,
-      titulo_de: titulo_de || null,
-      descripcion_es: descripcion_es || null,
-      descripcion_en: descripcion_en || null,
-      descripcion_fr: descripcion_fr || null,
-      descripcion_it: descripcion_it || null,
-      descripcion_de: descripcion_de || null,
-      precio: parseFloat(precio),
-      foto_url: foto_url || null,
-      categoria_id: categoria_id || null,
-      es_especial: es_especial || false,
-      activo: activo !== false,
-    })
-    .eq('id', id)
-    .eq('empresa_id', empresaId)
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.errors[0].message);
   }
 
-  return NextResponse.json(data);
+  try {
+    const product = await productUseCase.update(idParsed.data.id, empresaId!, parsed.data);
+    return successResponse(product);
+  } catch {
+    return errorResponse('Error al actualizar producto');
+  }
 }
 
 export async function DELETE(request: NextRequest) {
-  const empresaId = await getAdminEmpresaId();
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const idParam = searchParams.get('id');
+  const idParsed = productIdSchema.safeParse({ id: idParam });
 
-  if (!id) {
-    return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+  if (!idParsed.success) {
+    return validationErrorResponse('ID inválido');
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  const { error } = await supabase
-    .from('productos')
-    .delete()
-    .eq('id', id)
-    .eq('empresa_id', empresaId);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await productUseCase.delete(idParsed.data.id, empresaId!);
+    return successResponse({ success: true });
+  } catch {
+    return errorResponse('Error al eliminar producto');
   }
-
-  return NextResponse.json({ success: true });
 }
