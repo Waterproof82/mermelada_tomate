@@ -1,30 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { z } from 'zod';
-
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Configuración de Supabase incompleta");
-  }
-  
-  return createClient(supabaseUrl, supabaseKey);
-}
+import { empresaRepository } from '@/core/infrastructure/database';
+import { updateEmpresaSchema } from '@/core/application/dtos/empresa.dto';
 
 function getEmpresaId(request: NextRequest): string | null {
   return request.headers.get('x-empresa-id');
 }
-
-const updateEmpresaSchema = z.object({
-  email_notification: z.string().email().optional().or(z.literal('')),
-  telefono_whatsapp: z.string().optional(),
-  fb: z.string().url().optional().or(z.literal('')),
-  instagram: z.string().url().optional().or(z.literal('')),
-  url_mapa: z.string().optional(),
-  direccion: z.string().optional(),
-});
 
 export async function GET(request: NextRequest) {
   const empresaId = getEmpresaId(request);
@@ -32,24 +12,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
-  const supabase = getSupabaseClient();
-
-  const { data: empresa } = await supabase
-    .from('empresas')
-    .select('email_notification, telefono_whatsapp, nombre, logo_url, fb, instagram, url_mapa, direccion')
-    .eq('id', empresaId)
-    .single();
-
-  return NextResponse.json({
-    email_notification: empresa?.email_notification || '',
-    telefono_whatsapp: empresa?.telefono_whatsapp || '',
-    nombre: empresa?.nombre || '',
-    logo_url: empresa?.logo_url || null,
-    fb: empresa?.fb || '',
-    instagram: empresa?.instagram || '',
-    url_mapa: empresa?.url_mapa || '',
-    direccion: empresa?.direccion || '',
-  });
+  try {
+    const empresa = await empresaRepository.getById(empresaId);
+    if (!empresa) {
+      return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 });
+    }
+    
+    return NextResponse.json({
+      email_notification: empresa.emailNotification || '',
+      telefono_whatsapp: '',
+      nombre: empresa.nombre || '',
+      logo_url: empresa.logoUrl || null,
+      fb: '',
+      instagram: '',
+      url_mapa: '',
+      direccion: '',
+    });
+  } catch (error) {
+    return NextResponse.json({ error: 'Error al obtener empresa' }, { status: 500 });
+  }
 }
 
 export async function PUT(request: NextRequest) {
@@ -68,23 +49,10 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const supabase = getSupabaseClient();
-
-  const { error } = await supabase
-    .from('empresas')
-    .update({ 
-      email_notification: parsed.data.email_notification || null,
-      telefono_whatsapp: parsed.data.telefono_whatsapp || null,
-      fb: parsed.data.fb || null,
-      instagram: parsed.data.instagram || null,
-      url_mapa: parsed.data.url_mapa || null,
-      direccion: parsed.data.direccion || null,
-    })
-    .eq('id', empresaId);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await empresaRepository.update(empresaId, parsed.data);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: 'Error al actualizar empresa' }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true });
 }
