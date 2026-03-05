@@ -1,8 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function GET(request: Request) {
   try {
@@ -18,14 +14,15 @@ export async function GET(request: Request) {
     // Decode email if it's URL encoded
     try {
       email = decodeURIComponent(email);
-    } catch (e) {
+    } catch {
       // Keep original if decode fails
     }
     
     // Normalizar email: trim, lowercase
     const normalizedEmail = email.trim().toLowerCase();
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { getSupabaseClient } = await import('@/core/infrastructure/database/supabase-client');
+    const supabase = getSupabaseClient();
 
     // Buscar cliente por empresa + email
     let clienteToUpdate = null;
@@ -62,11 +59,10 @@ export async function GET(request: Request) {
     let nuevoValor: boolean;
     
     if (action === 'alta') {
-      nuevoValor = true; // Darse de alta
+      nuevoValor = true;
     } else if (action === 'baja') {
-      nuevoValor = false; // Darse de baja
+      nuevoValor = false;
     } else {
-      // Default: toggle
       nuevoValor = !clienteToUpdate.aceptar_promociones;
     }
 
@@ -75,7 +71,6 @@ export async function GET(request: Request) {
       .update({ aceptar_promociones: nuevoValor })
       .eq('id', clienteToUpdate.id);
 
-    // Redirigir con mensaje
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.almadearena.es';
     const mensaje = nuevoValor ? 'promo=on' : 'promo=off';
     return NextResponse.redirect(`${baseUrl}/?${mensaje}`);

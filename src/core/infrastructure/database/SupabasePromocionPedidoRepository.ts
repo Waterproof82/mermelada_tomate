@@ -70,7 +70,10 @@ export class SupabasePedidoRepository implements IPedidoRepository {
   async findAllByTenant(empresaId: string): Promise<any[]> {
     const { data, error } = await this.supabase
       .from('pedidos')
-      .select('*')
+      .select(`
+        *,
+        clientes:cliente_id (nombre, email, telefono)
+      `)
       .eq('empresa_id', empresaId)
       .order('created_at', { ascending: false });
 
@@ -81,7 +84,10 @@ export class SupabasePedidoRepository implements IPedidoRepository {
   async findById(id: string): Promise<any | null> {
     const { data, error } = await this.supabase
       .from('pedidos')
-      .select('*')
+      .select(`
+        *,
+        clientes:cliente_id (nombre, email, telefono)
+      `)
       .eq('id', id)
       .single();
 

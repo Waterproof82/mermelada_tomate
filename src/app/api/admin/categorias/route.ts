@@ -1,61 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { categoryUseCase } from '@/core/infrastructure/database';
 import { createCategorySchema, updateCategorySchema, categoryIdSchema } from '@/core/application/dtos/category.dto';
-
-function getEmpresaId(request: NextRequest): string | null {
-  return request.headers.get('x-empresa-id');
-}
+import { requireAuth, successResponse, errorResponse, validationErrorResponse } from '@/core/infrastructure/api/helpers';
 
 export async function GET(request: NextRequest) {
-  const empresaId = getEmpresaId(request);
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   try {
-    const categories = await categoryUseCase.getAll(empresaId);
-    return NextResponse.json(categories);
-  } catch (error) {
-    return NextResponse.json({ error: 'Error al obtener categorías' }, { status: 500 });
+    const categories = await categoryUseCase.getAll(empresaId!);
+    return successResponse(categories);
+  } catch {
+    return errorResponse('Error al obtener categorías');
   }
 }
 
 export async function POST(request: NextRequest) {
-  const empresaId = getEmpresaId(request);
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   const body = await request.json();
   const parsed = createCategorySchema.safeParse({ ...body, empresaId });
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.errors[0].message },
-      { status: 400 }
-    );
+    return validationErrorResponse(parsed.error.errors[0].message);
   }
 
   try {
     const category = await categoryUseCase.create(parsed.data);
-    return NextResponse.json(category);
-  } catch (error) {
-    return NextResponse.json({ error: 'Error al crear categoría' }, { status: 500 });
+    return successResponse(category, 201);
+  } catch {
+    return errorResponse('Error al crear categoría');
   }
 }
 
 export async function PUT(request: NextRequest) {
-  const empresaId = getEmpresaId(request);
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   const { searchParams } = new URL(request.url);
   const idParam = searchParams.get('id');
-
   const idParsed = categoryIdSchema.safeParse({ id: idParam });
+
   if (!idParsed.success) {
-    return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    return validationErrorResponse('ID inválido');
   }
 
   const body = await request.json();
@@ -63,38 +51,33 @@ export async function PUT(request: NextRequest) {
   const parsed = updateCategorySchema.safeParse(updateData);
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.errors[0].message },
-      { status: 400 }
-    );
+    return validationErrorResponse(parsed.error.errors[0].message);
   }
 
   try {
-    const category = await categoryUseCase.update(idParsed.data.id, empresaId, parsed.data);
-    return NextResponse.json(category);
-  } catch (error) {
-    return NextResponse.json({ error: 'Error al actualizar categoría' }, { status: 500 });
+    const category = await categoryUseCase.update(idParsed.data.id, empresaId!, parsed.data);
+    return successResponse(category);
+  } catch {
+    return errorResponse('Error al actualizar categoría');
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  const empresaId = getEmpresaId(request);
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   const { searchParams } = new URL(request.url);
   const idParam = searchParams.get('id');
-
   const idParsed = categoryIdSchema.safeParse({ id: idParam });
+
   if (!idParsed.success) {
-    return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    return validationErrorResponse('ID inválido');
   }
 
   try {
-    await categoryUseCase.delete(idParsed.data.id, empresaId);
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error al eliminar categoría' }, { status: 500 });
+    await categoryUseCase.delete(idParsed.data.id, empresaId!);
+    return successResponse({ success: true });
+  } catch {
+    return errorResponse('Error al eliminar categoría');
   }
 }

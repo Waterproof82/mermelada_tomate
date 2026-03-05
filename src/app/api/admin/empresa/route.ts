@@ -1,24 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { empresaRepository } from '@/core/infrastructure/database';
 import { updateEmpresaSchema } from '@/core/application/dtos/empresa.dto';
-
-function getEmpresaId(request: NextRequest): string | null {
-  return request.headers.get('x-empresa-id');
-}
+import { requireAuth, successResponse, errorResponse, validationErrorResponse } from '@/core/infrastructure/api/helpers';
 
 export async function GET(request: NextRequest) {
-  const empresaId = getEmpresaId(request);
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   try {
-    const empresa = await empresaRepository.getById(empresaId);
+    const empresa = await empresaRepository.getById(empresaId!);
     if (!empresa) {
-      return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 });
+      return errorResponse('Empresa no encontrada', 404);
     }
     
-    return NextResponse.json({
+    return successResponse({
       email_notification: empresa.emailNotification || '',
       telefono_whatsapp: '',
       nombre: empresa.nombre || '',
@@ -28,31 +23,26 @@ export async function GET(request: NextRequest) {
       url_mapa: '',
       direccion: '',
     });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error al obtener empresa' }, { status: 500 });
+  } catch {
+    return errorResponse('Error al obtener empresa');
   }
 }
 
 export async function PUT(request: NextRequest) {
-  const empresaId = getEmpresaId(request);
-  if (!empresaId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
 
   const body = await request.json();
   const parsed = updateEmpresaSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.errors[0].message },
-      { status: 400 }
-    );
+    return validationErrorResponse(parsed.error.errors[0].message);
   }
 
   try {
-    await empresaRepository.update(empresaId, parsed.data);
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error al actualizar empresa' }, { status: 500 });
+    await empresaRepository.update(empresaId!, parsed.data);
+    return successResponse({ success: true });
+  } catch {
+    return errorResponse('Error al actualizar empresa');
   }
 }
