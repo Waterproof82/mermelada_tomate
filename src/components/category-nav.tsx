@@ -102,7 +102,7 @@ export function CategoryNav(props: Readonly<CategoryNavProps>) {
                 : "text-muted-foreground hover:bg-secondary hover:text-secondary-foreground"
             )}
           >
-            {(language !== "es" && cat.translations?.[language]) || cat.label}
+            {(language !== "es" && cat.translations?.[language]?.name) || cat.label}
           </button>
         ))}
       </div>

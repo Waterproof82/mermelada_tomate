@@ -29,6 +29,30 @@ export class SupabaseProductRepository implements IProductRepository {
     };
   }
 
+  // Map to database column format (for admin UI compatibility)
+  private mapToDatabaseFormat(row: any) {
+    return {
+      id: row.id,
+      empresa_id: row.empresa_id,
+      categoria_id: row.categoria_id,
+      titulo_es: row.titulo_es,
+      titulo_en: row.titulo_en || null,
+      titulo_fr: row.titulo_fr || null,
+      titulo_it: row.titulo_it || null,
+      titulo_de: row.titulo_de || null,
+      descripcion_es: row.descripcion_es || null,
+      descripcion_en: row.descripcion_en || null,
+      descripcion_fr: row.descripcion_fr || null,
+      descripcion_it: row.descripcion_it || null,
+      descripcion_de: row.descripcion_de || null,
+      precio: Number.parseFloat(row.precio) || 0,
+      foto_url: row.foto_url || null,
+      es_especial: row.es_especial ?? false,
+      activo: row.activo ?? true,
+      created_at: row.created_at,
+    };
+  }
+
   async create(data: CreateProductDTO): Promise<Product> {
     const { data: created, error } = await this.supabase
       .from("productos")
@@ -76,7 +100,9 @@ export class SupabaseProductRepository implements IProductRepository {
       .order("created_at", { ascending: false });
 
     if (error) throw new Error(`DB Error: ${error.message}`);
-    return data.map((row) => this.mapToDomain(row));
+
+    // Return database format for admin UI compatibility
+    return data.map((row) => this.mapToDatabaseFormat(row));
   }
 
   async update(id: string, empresaId: string, data: Partial<UpdateProductDTO>): Promise<Product> {

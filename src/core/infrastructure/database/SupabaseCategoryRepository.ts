@@ -31,6 +31,28 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
     };
   }
 
+  // Map to database column format (for admin UI compatibility)
+  private mapToDatabaseFormat(row: any) {
+    return {
+      id: row.id,
+      empresa_id: row.empresa_id,
+      nombre_es: row.nombre_es,
+      nombre_en: row.nombre_en || null,
+      nombre_fr: row.nombre_fr || null,
+      nombre_it: row.nombre_it || null,
+      nombre_de: row.nombre_de || null,
+      descripcion_es: row.descripcion_es || null,
+      descripcion_en: row.descripcion_en || null,
+      descripcion_fr: row.descripcion_fr || null,
+      descripcion_it: row.descripcion_it || null,
+      descripcion_de: row.descripcion_de || null,
+      orden: row.orden || 0,
+      categoria_complemento_de: row.categoria_complemento_de || null,
+      complemento_obligatorio: row.complemento_obligatorio || false,
+      categoria_padre_id: row.categoria_padre_id || null,
+    };
+  }
+
   async findAllByTenant(empresaId: string): Promise<Category[]> {
     const { data, error } = await this.supabase
       .from("categorias")
@@ -40,7 +62,8 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
 
     if (error) throw new Error(`DB Error fetching categories: ${error.message}`);
 
-    return data.map((row: any) => this.mapToDomain(row));
+    // Return database format for admin UI compatibility
+    return data.map((row: any) => this.mapToDatabaseFormat(row));
   }
 
   async create(data: CreateCategoryDTO): Promise<Category> {

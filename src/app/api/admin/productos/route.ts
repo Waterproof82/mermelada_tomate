@@ -48,10 +48,16 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json();
+  console.log('PUT body received:', JSON.stringify(body));
   const { id: _bodyId, ...updateData } = body;
-  const parsed = updateProductSchema.safeParse(updateData);
+  
+  // Merge id from query param with body data
+  const dataWithId = { ...updateData, id: idParsed.data.id };
+  console.log('PUT dataWithId:', JSON.stringify(dataWithId));
+  const parsed = updateProductSchema.safeParse(dataWithId);
 
   if (!parsed.success) {
+    console.error('Zod validation error:', JSON.stringify(parsed.error.errors, null, 2));
     return validationErrorResponse(parsed.error.errors[0].message);
   }
 
