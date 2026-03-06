@@ -13,7 +13,10 @@ export async function GET(request: Request) {
     const email = searchParams.get('email');
     const empresaId = searchParams.get('empresa');
 
+    console.log('[Unsubscribe] Request received:', { email, empresaId, url: request.url });
+
     if (!email || !empresaId) {
+      console.log('[Unsubscribe] Missing params, redirecting to error');
       return NextResponse.redirect(`${getBaseUrl()}/?error=invalid`);
     }
 
@@ -28,6 +31,8 @@ export async function GET(request: Request) {
       .eq('email', email)
       .single();
 
+    console.log('[Unsubscribe] Cliente found:', { cliente, clienteError });
+
     if (clienteError || !cliente) {
       return NextResponse.redirect(`${getBaseUrl()}/?error=notfound`);
     }
@@ -35,15 +40,18 @@ export async function GET(request: Request) {
     // Toggle: cambiar valor de aceptar_promociones
     const nuevoValor = !cliente.aceptar_promociones;
 
+    console.log('[Unsubscribe] Toggling aceptar_promociones:', { current: cliente.aceptar_promociones, new: nuevoValor });
+
     await supabase
       .from('clientes')
       .update({ aceptar_promociones: nuevoValor })
       .eq('id', cliente.id);
 
     const mensaje = nuevoValor ? 'promo=on' : 'promo=off';
+    console.log('[Unsubscribe] Redirecting to:', `${getBaseUrl()}/?${mensaje}`);
     return NextResponse.redirect(`${getBaseUrl()}/?${mensaje}`);
   } catch (error) {
-    console.error('Error:', error);
+    console.error('[Unsubscribe] Error:', error);
     return NextResponse.redirect(`${getBaseUrl()}/?error=internal`);
   }
 }
