@@ -43,9 +43,11 @@ export async function PATCH(request: NextRequest) {
   if (authError) return authError;
 
   const body = await request.json();
+  console.log('PATCH clientes body:', JSON.stringify(body));
   const parsed = updateClienteSchema.safeParse(body);
 
   if (!parsed.success) {
+    console.error('PATCH clientes validation error:', JSON.stringify(parsed.error.errors, null, 2));
     return validationErrorResponse(parsed.error.errors[0].message);
   }
 
