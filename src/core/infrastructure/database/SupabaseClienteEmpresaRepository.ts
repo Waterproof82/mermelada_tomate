@@ -115,7 +115,7 @@ export class SupabaseEmpresaRepository implements IEmpresaRepository {
   async getById(empresaId: string): Promise<Partial<Empresa> | null> {
     const { data: empresa } = await this.supabase
       .from('empresas')
-      .select('email_notification, telefono_whatsapp, nombre, logo_url, fb, instagram, url_mapa, direccion, dominio')
+      .select('email_notification, telefono_whatsapp, nombre, logo_url, fb, instagram, url_mapa, direccion, dominio, slug, url_image, descripcion_es, descripcion_en, descripcion_fr, descripcion_it, descripcion_de, mostrar_carrito, moneda, subdomain_pedidos')
       .eq('id', empresaId)
       .single();
 
@@ -125,17 +125,25 @@ export class SupabaseEmpresaRepository implements IEmpresaRepository {
       id: empresaId,
       nombre: empresa.nombre,
       dominio: empresa.dominio || '',
+      slug: (empresa.slug as string | null) ?? null,
       logoUrl: empresa.logo_url,
-      mostrarCarrito: false,
-      moneda: 'EUR',
+      mostrarCarrito: empresa.mostrar_carrito ?? false,
+      moneda: empresa.moneda ?? 'EUR',
       emailNotification: empresa.email_notification,
       colores: null,
-      descripcion: null,
       fb: empresa.fb ?? null,
       instagram: empresa.instagram ?? null,
       urlMapa: empresa.url_mapa ?? null,
       direccion: empresa.direccion ?? null,
       telefonoWhatsapp: empresa.telefono_whatsapp ?? null,
+      urlImage: empresa.url_image ?? null,
+      descripcion: {
+        es: empresa.descripcion_es as string | null,
+        en: empresa.descripcion_en as string | null,
+        fr: empresa.descripcion_fr as string | null,
+        it: empresa.descripcion_it as string | null,
+        de: empresa.descripcion_de as string | null,
+      },
     };
   }
 
@@ -147,6 +155,12 @@ export class SupabaseEmpresaRepository implements IEmpresaRepository {
     if (data.instagram !== undefined) updatePayload.instagram = data.instagram || null;
     if (data.url_mapa !== undefined) updatePayload.url_mapa = data.url_mapa || null;
     if (data.direccion !== undefined) updatePayload.direccion = data.direccion || null;
+    if (data.url_image !== undefined) updatePayload.url_image = data.url_image || null;
+    if (data.descripcion_es !== undefined) updatePayload.descripcion_es = data.descripcion_es || null;
+    if (data.descripcion_en !== undefined) updatePayload.descripcion_en = data.descripcion_en || null;
+    if (data.descripcion_fr !== undefined) updatePayload.descripcion_fr = data.descripcion_fr || null;
+    if (data.descripcion_it !== undefined) updatePayload.descripcion_it = data.descripcion_it || null;
+    if (data.descripcion_de !== undefined) updatePayload.descripcion_de = data.descripcion_de || null;
 
     const { error } = await this.supabase
       .from('empresas')

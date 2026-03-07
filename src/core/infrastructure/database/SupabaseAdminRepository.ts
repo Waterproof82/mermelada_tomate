@@ -46,13 +46,13 @@ export class SupabaseAdminRepository implements IAdminRepository {
 
   private mapEmpresa(row: Record<string, unknown>): Empresa {
     const hasDescripcion = row.descripcion_es || row.descripcion_en || row.descripcion_fr || row.descripcion_it || row.descripcion_de;
-    const descripcion = hasDescripcion
+    const descripcion: Empresa['descripcion'] = hasDescripcion
       ? {
-          es: (row.descripcion_es as string | null) || null,
-          en: (row.descripcion_en as string | null) || null,
-          fr: (row.descripcion_fr as string | null) || null,
-          it: (row.descripcion_it as string | null) || null,
-          de: (row.descripcion_de as string | null) || null,
+          es: row.descripcion_es as string | null,
+          en: row.descripcion_en as string | null,
+          fr: row.descripcion_fr as string | null,
+          it: row.descripcion_it as string | null,
+          de: row.descripcion_de as string | null,
         }
       : null;
 
@@ -73,6 +73,7 @@ export class SupabaseAdminRepository implements IAdminRepository {
       id: row.id as string,
       nombre: row.nombre as string,
       dominio: row.dominio as string,
+      slug: (row.slug as string | null) ?? null,
       logoUrl: row.logo_url as string | null,
       mostrarCarrito: (row.mostrar_carrito as boolean) ?? true,
       moneda: (row.moneda as string) ?? "EUR",

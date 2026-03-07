@@ -64,6 +64,7 @@ export interface Empresa {
   id: string;
   nombre: string;
   dominio: string;
+  slug: string | null;
   logoUrl: string | null;
   mostrarCarrito: boolean;
   moneda: string;
@@ -71,11 +72,11 @@ export interface Empresa {
   urlImage: string | null;
   colores: EmpresaColores | null;
   descripcion: {
-    es?: string;
-    en?: string;
-    fr?: string;
-    it?: string;
-    de?: string;
+    es?: string | null;
+    en?: string | null;
+    fr?: string | null;
+    it?: string | null;
+    de?: string | null;
   } | null;
   fb?: string | null;
   instagram?: string | null;
@@ -127,6 +128,7 @@ export interface Pedido {
   numero_pedido: number;
   detalle_pedido: PedidoItem[];
   total: number;
+  moneda: string | null;
   estado: string;
   created_at: string;
   clientes?: {

@@ -334,22 +334,31 @@ if (!admin) redirect('/admin/login');
 > ⚠️ **IMPORTANTE**: Si agregás nuevas rutas públicas en el admin, agregarlas al proxy en `isPublicRoute`
 
 ### Imágenes
-- Se optimizan en cliente antes del upload (480x480, WebP, 80%)
-- Flujo de upload:
-  1. Cliente selecciona imagen y la optimiza
-  2. Llama Server Action `uploadImageAction` para obtener URL prefirmada (60 seg)
-  3. Upload directo del navegador a R2
-  4. URL pública guardada en BBDD
-- Server Action de aplicación: `core/application/actions/storage.actions.ts` → `uploadImageAction`
-- Server Action de infraestructura: `core/infrastructure/storage/actions.ts` → `getPresignedUploadUrlAction`
+- Se optimizan en cliente antes del upload (480x480, WebP, 80%) en `components/ui/image-uploader.tsx`
+- **Flujo de upload (servidor)**: browser → `POST /api/admin/upload-image` → Cloudflare API / R2
+  1. Cliente selecciona imagen y la optimiza a WebP (canvas)
+  2. POST a `/api/admin/upload-image` con `FormData`
+  3. El API route deriva `empresaSlug` desde la DB (usando `empresaId` del JWT) — nunca del cliente
+  4. Si `CLOUDFLARE_API_TOKEN` está definido: upload via `api.cloudflare.com` REST API (recomendado en dev, bypassa `r2.cloudflarestorage.com`)
+  5. Si no: fallback con AWS SDK `PutObjectCommand` (S3-compatible)
+  6. Devuelve `{ publicUrl }` y el componente llama `onChange(publicUrl)`
+- **Todos los uploads** (productos, configuración, promociones) pasan por `/api/admin/upload-image`
+- **NO** usar presigned URLs ni `uploadImageAction` — eliminados
+- `core/infrastructure/storage/actions.ts` y `core/application/actions/storage.actions.ts` fueron eliminados
 
 ### R2
 - Cliente singleton en `core/infrastructure/storage/s3-client.ts`
-  - `getS3Client()` — Obtener cliente S3
-  - `getR2Config()` — Obtener config (bucket, domain)
+  - `getS3Client()` — Obtener cliente S3 (lanza si falta config)
+  - `getR2Config()` — Obtener `{ bucketName, publicDomain }`
   - `deleteImageFromR2(url)` — Eliminar imagen del bucket por URL pública
-- Estructura de carpetas: `{empresa-slug}/{año}/{mes}/{uuid}-{filename}.webp`
-- **R2 CORS**: Necesita configurarse para uploads directos (ejecutar `scripts/setup-r2-cors.ts`)
+- **Dominio público**: `NEXT_PUBLIC_R2_DOMAIN=https://imagenes.almadearena.es` (subdominio custom mapeado al bucket)
+- **Estructura de URLs**: `https://imagenes.almadearena.es/{empresa.dominio}/{año}/{mes}/{uuid}-{filename}.webp`
+  - Ej. prod: `https://imagenes.almadearena.es/almadearena.es/2025/01/abc123-banner.webp`
+  - Ej. dev:  `https://imagenes.almadearena.es/localhost/2025/01/abc123-banner.webp`
+- **`empresaSlug`** en el path se deriva de `empresa.slug` (columna `slug` en `empresas`), con fallback a `empresa.dominio`. Nunca viene del cliente.
+- **Fix SSL en desarrollo**: antivirus intercepta HTTPS de Node.js → `rejectUnauthorized: false` vía `@smithy/node-http-handler` (solo en `NODE_ENV !== "production"`)
+- **Fix checksums R2**: AWS SDK v3 añade CRC32 por defecto; R2 no los soporta → `requestChecksumCalculation: "WHEN_REQUIRED"` y `responseChecksumValidation: "WHEN_REQUIRED"` en el S3Client
+- **R2 CORS**: solo necesario para uploads directos desde el browser (no aplica al flujo actual server-side)
 
 ### Validation
 - **TODAS** las rutas API usan Zod schemas con `safeParse`

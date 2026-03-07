@@ -22,6 +22,12 @@ export async function GET(request: NextRequest) {
       instagram: empresa.instagram || '',
       url_mapa: empresa.urlMapa || '',
       direccion: empresa.direccion || '',
+      url_image: empresa.urlImage || null,
+      descripcion_es: empresa.descripcion?.es || '',
+      descripcion_en: empresa.descripcion?.en || '',
+      descripcion_fr: empresa.descripcion?.fr || '',
+      descripcion_it: empresa.descripcion?.it || '',
+      descripcion_de: empresa.descripcion?.de || '',
     });
   } catch {
     return errorResponse('Error al obtener empresa');

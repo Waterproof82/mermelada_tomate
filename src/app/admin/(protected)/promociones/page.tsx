@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Users, Mail, FileText, Send, CheckCircle, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAdmin } from '@/lib/admin-context';
-import { uploadImageAction } from '@/core/application/actions/storage.actions';
 
 interface Cliente {
   id: string;
@@ -24,7 +22,6 @@ interface Promocion {
 }
 
 export default function PromocionesPage() {
-  const { empresaSlug } = useAdmin();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
   const [savingPromo, setSavingPromo] = useState(false);
@@ -92,27 +89,19 @@ export default function PromocionesPage() {
       if (selectedImage) {
         setUploadingImage(true);
         try {
-          // Get upload URL from server
-          const fileName = `promo-${Date.now()}-${selectedImage.name}`;
-          const result = await uploadImageAction(
-            fileName,
-            selectedImage.type,
-            selectedImage.size,
-            empresaSlug
-          );
-          
-          // Upload to R2
-          const uploadRes = await fetch(result.url, {
-            method: 'PUT',
-            body: selectedImage,
-            headers: { 'Content-Type': selectedImage.type },
+          const formData = new FormData();
+          formData.append('file', selectedImage);
+          const uploadRes = await fetch('/api/admin/upload-image', {
+            method: 'POST',
+            body: formData,
           });
-          
           if (!uploadRes.ok) {
-            throw new Error('Error uploading image');
+            const data = await uploadRes.json().catch(() => ({})) as { error?: string };
+            throw new Error(data.error ?? 'Error al subir imagen');
           }
-          
-          imagenUrl = result.publicUrl;
+          const data = await uploadRes.json() as { publicUrl?: string };
+          if (!data.publicUrl) throw new Error('No se recibió la URL de la imagen');
+          imagenUrl = data.publicUrl;
         } finally {
           setUploadingImage(false);
         }

@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { authAdminUseCase, empresaUseCase } from '@/core/infrastructure/database';
 import { ColoresForm } from '@/components/admin/colores-form';
 import { EmpresaDatosForm } from '@/components/admin/empresa-datos-form';
+import { EmpresaAparienciaForm } from '@/components/admin/empresa-apariencia-form';
 
 export default async function ConfiguracionPage() {
   const cookieStore = await cookies();
@@ -28,6 +29,17 @@ export default async function ConfiguracionPage() {
     direccion: empresaData?.direccion || '',
   };
 
+  const empresaApariencia = {
+    url_image: empresaData?.urlImage || null,
+    descripcion_es: empresaData?.descripcion?.es || '',
+    descripcion_en: empresaData?.descripcion?.en || '',
+    descripcion_fr: empresaData?.descripcion?.fr || '',
+    descripcion_it: empresaData?.descripcion?.it || '',
+    descripcion_de: empresaData?.descripcion?.de || '',
+  };
+
+  const empresaSlug = empresaData?.dominio || admin.empresa.id;
+
   return (
     <div className="pt-20 lg:pt-0 px-6 lg:px-8">
       <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-white mb-2">
@@ -46,6 +58,17 @@ export default async function ConfiguracionPage() {
           Esta información se mostrará en el pie de página de tu menú digital.
         </p>
         <EmpresaDatosForm initialData={empresaDatos} />
+      </div>
+
+      {/* Apariencia */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-6 dark:text-white">
+          Apariencia del menú
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          Imagen de fondo del banner y descripción del restaurante en cada idioma.
+        </p>
+        <EmpresaAparienciaForm initialData={empresaApariencia} empresaSlug={empresaSlug} />
       </div>
 
       {/* Colores */}

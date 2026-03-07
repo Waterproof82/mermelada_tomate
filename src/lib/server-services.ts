@@ -33,34 +33,34 @@ export interface EmpresaInfo {
     foreground: string;
   } | null;
   descripcion: {
-    es?: string;
-    en?: string;
-    fr?: string;
-    it?: string;
-    de?: string;
+    es?: string | null;
+    en?: string | null;
+    fr?: string | null;
+    it?: string | null;
+    de?: string | null;
   } | null;
   titulo: string | null;
   subtitulo: string | null;
   subtitulo2: {
-    es?: string;
-    en?: string;
-    fr?: string;
-    it?: string;
-    de?: string;
+    es?: string | null;
+    en?: string | null;
+    fr?: string | null;
+    it?: string | null;
+    de?: string | null;
   } | null;
   footer1: {
-    es?: string;
-    en?: string;
-    fr?: string;
-    it?: string;
-    de?: string;
+    es?: string | null;
+    en?: string | null;
+    fr?: string | null;
+    it?: string | null;
+    de?: string | null;
   } | null;
   footer2: {
-    es?: string;
-    en?: string;
-    fr?: string;
-    it?: string;
-    de?: string;
+    es?: string | null;
+    en?: string | null;
+    fr?: string | null;
+    it?: string | null;
+    de?: string | null;
   } | null;
   fb: string | null;
   instagram: string | null;
@@ -70,16 +70,13 @@ export interface EmpresaInfo {
   emailNotification: string | null;
 }
 
-function mapTranslations(data: Record<string, unknown>, prefix: string) {
-  return data[`${prefix}_es`] || data[`${prefix}_en`] || data[`${prefix}_fr`] || data[`${prefix}_it`] || data[`${prefix}_de`]
-    ? {
-        es: data[`${prefix}_es`] || null,
-        en: data[`${prefix}_en`] || null,
-        fr: data[`${prefix}_fr`] || null,
-        it: data[`${prefix}_it`] || null,
-        de: data[`${prefix}_de`] || null,
-      }
-    : null;
+function mapTranslations(data: Record<string, unknown>, prefix: string): { es?: string | null; en?: string | null; fr?: string | null; it?: string | null; de?: string | null } | null {
+  const es = (data[`${prefix}_es`] as string | null) ?? null;
+  const en = (data[`${prefix}_en`] as string | null) ?? null;
+  const fr = (data[`${prefix}_fr`] as string | null) ?? null;
+  const it = (data[`${prefix}_it`] as string | null) ?? null;
+  const de = (data[`${prefix}_de`] as string | null) ?? null;
+  return es || en || fr || it || de ? { es, en, fr, it, de } : null;
 }
 
 export async function getEmpresaByDomain(domain: string): Promise<EmpresaInfo | null> {
