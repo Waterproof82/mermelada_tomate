@@ -3,10 +3,22 @@
     "allow": [
       "Bash(pnpm lint:*)",
       "Bash(pnpm build:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm run:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git status:*)",
       "mcp__ide__getDiagnostics",
+      "mcp__context7__*",
       "Bash(xargs sh:*)",
       "Bash(python3:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(claude mcp:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "browser-tools",
+    "context7"
+  ],
+  "enableAllProjectMcpServers": true
 }

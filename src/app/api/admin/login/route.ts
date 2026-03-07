@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { authAdminUseCase } from '@/core/application/use-cases/auth-admin.use-case';
+import { authAdminUseCase } from '@/core/infrastructure/database';
 import { loginSchema } from '@/core/application/dtos/auth.dto';
 
 export async function POST(request: NextRequest) {

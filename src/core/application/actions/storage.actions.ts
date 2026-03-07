@@ -26,10 +26,3 @@ export async function uploadImageAction(
   return result;
 }
 
-/**
- * Server Action para eliminar imagen
- */
-export async function deleteImageAction(fileKey: string) {
-  const { deleteFileAction } = await import("@/core/infrastructure/storage/actions");
-  return deleteFileAction(fileKey);
-}

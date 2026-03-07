@@ -1,20 +1,21 @@
 import { SignJWT, jwtVerify } from "jose";
-import { adminRepository } from "@/core/infrastructure/database/index";
+import { IAdminRepository, AdminWithEmpresa } from "@/core/domain/repositories/IAdminRepository";
 import { LoginDTO, loginSchema } from "../dtos/auth.dto";
-import { AdminWithEmpresa } from "@/core/domain/repositories/IAdminRepository";
 
 const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 const TOKEN_EXPIRY = "24h";
 
 export class AuthAdminUseCase {
+  constructor(private readonly adminRepo: IAdminRepository) {}
+
   async login(data: LoginDTO): Promise<{ token: string; admin: AdminWithEmpresa }> {
     loginSchema.parse(data);
 
     const { email, password } = data;
 
-    const userId = await adminRepository.loginWithPassword(email, password);
+    const userId = await this.adminRepo.loginWithPassword(email, password);
 
-    const admin = await adminRepository.findById(userId);
+    const admin = await this.adminRepo.findById(userId);
 
     if (!admin) {
       throw new Error("Usuario no autorizado como admin");
@@ -39,7 +40,7 @@ export class AuthAdminUseCase {
       const { payload } = await jwtVerify(token, secret);
 
       const adminId = payload.adminId as string;
-      const admin = await adminRepository.findById(adminId);
+      const admin = await this.adminRepo.findById(adminId);
 
       return admin;
     } catch {
@@ -47,5 +48,3 @@ export class AuthAdminUseCase {
     }
   }
 }
-
-export const authAdminUseCase = new AuthAdminUseCase();

@@ -1,5 +1,9 @@
 # AGENTS.md - Contexto para Agentes IA
 
+## Regla de documentación externa
+
+When writing code that uses any external library, always use context7 to get current documentation before generating code.
+
 ## Stack
 Next.js 16 + React 19 + TypeScript + Supabase + Tailwind CSS v4 + Cloudflare R2
 

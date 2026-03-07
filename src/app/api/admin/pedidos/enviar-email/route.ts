@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/brevo-email';
 import { empresaRepository } from '@/core/infrastructure/database';
+import { escapeHtml } from '@/lib/html-utils';
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
@@ -40,7 +41,7 @@ interface CartItem {
 function parseMainDomain(domain: string): string {
   const subdomainPedidos = 'pedidos';
   const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
-  return isPedidos 
+  return isPedidos
     ? domain.replace(/^pedidos\./, '').replace(/-pedidos$/, '')
     : domain;
 }
@@ -56,15 +57,15 @@ function generateOrderEmail(items: CartItem[], total: number, empresaNombre: str
   const itemsHtml = items.map(ci => {
     const complementPrice = ci.selectedComplements?.reduce((sum, c) => sum + c.price, 0) || 0;
     const itemTotal = (ci.item.price + complementPrice) * ci.quantity;
-    
-    const complementsHtml = ci.selectedComplements?.map(c => 
-      `<li style="margin-left: 20px; color: #666;">+ ${c.name} (${c.price.toFixed(2)}€)</li>`
+
+    const complementsHtml = ci.selectedComplements?.map(c =>
+      `<li style="margin-left: 20px; color: #666;">+ ${escapeHtml(c.name)} (${c.price.toFixed(2)}€)</li>`
     ).join('') || '';
 
     return `
       <tr style="border-bottom: 1px solid #eee;">
         <td style="padding: 12px 8px;">
-          <strong>${ci.item.name}</strong>
+          <strong>${escapeHtml(ci.item.name)}</strong>
           ${complementsHtml ? `<ul style="margin: 4px 0 0 0; padding: 0;">${complementsHtml}</ul>` : ''}
         </td>
         <td style="padding: 12px 8px; text-align: center;">${ci.quantity}</td>
@@ -87,7 +88,7 @@ function generateOrderEmail(items: CartItem[], total: number, empresaNombre: str
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
           <tr style="background-color: #1a1a1a;">
             <td style="padding: 24px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">${empresaNombre}</h1>
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">${escapeHtml(empresaNombre)}</h1>
               <p style="margin: 8px 0 0 0; color: #888; font-size: 14px;">Nuevo Pedido #${numeroOrden}</p>
             </td>
           </tr>
@@ -96,9 +97,9 @@ function generateOrderEmail(items: CartItem[], total: number, empresaNombre: str
               <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9f9f9; border-radius: 8px; margin-bottom: 20px;">
                 <tr>
                   <td style="padding: 16px;">
-                    <p style="margin: 0; color: #333; font-size: 14px;"><strong>Cliente:</strong> ${nombre}</p>
-                    <p style="margin: 8px 0 0 0; color: #333; font-size: 14px;"><strong>Teléfono:</strong> ${telefono}</p>
-                    ${email ? `<p style="margin: 8px 0 0 0; color: #333; font-size: 14px;"><strong>Email:</strong> ${email}</p>` : ''}
+                    <p style="margin: 0; color: #333; font-size: 14px;"><strong>Cliente:</strong> ${escapeHtml(nombre)}</p>
+                    <p style="margin: 8px 0 0 0; color: #333; font-size: 14px;"><strong>Teléfono:</strong> ${escapeHtml(telefono)}</p>
+                    ${email ? `<p style="margin: 8px 0 0 0; color: #333; font-size: 14px;"><strong>Email:</strong> ${escapeHtml(email)}</p>` : ''}
                   </td>
                 </tr>
               </table>
@@ -134,7 +135,7 @@ function generateOrderEmail(items: CartItem[], total: number, empresaNombre: str
           <tr style="background-color: #f9f9f9;">
             <td style="padding: 20px; text-align: center;">
               <p style="margin: 0; color: #888; font-size: 12px;">
-                Pedido generado automáticamente desde ${empresaNombre}
+                Pedido generado automáticamente desde ${escapeHtml(empresaNombre)}
               </p>
             </td>
           </tr>
@@ -174,9 +175,9 @@ export async function POST(request: Request) {
     const { items, total, numeroOrden, nombre, telefono, email } = parsed.data;
 
     const html = generateOrderEmail(
-      items, 
-      total, 
-      empresa.nombre, 
+      items,
+      total,
+      empresa.nombre,
       numeroOrden || 1,
       nombre || 'Cliente',
       telefono || 'No proporcionado',

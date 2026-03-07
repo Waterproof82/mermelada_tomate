@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { pedidoRepository, pedidoUseCase } from '@/core/infrastructure/database';
+import { pedidoUseCase } from '@/core/infrastructure/database';
 import { requireAuth, successResponse, errorResponse, validationErrorResponse } from '@/core/infrastructure/api/helpers';
 
 const pedidoIdSchema = z.object({
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    const pedidos = await pedidoRepository.findAllByTenant(empresaId!);
+    const pedidos = await pedidoUseCase.getAll(empresaId!);
     return successResponse({ pedidos });
   } catch {
     return errorResponse('Error al obtener pedidos');
@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    await pedidoRepository.updateStatus(parsed.data.id, empresaId!, parsed.data.estado);
+    await pedidoUseCase.updateStatus(parsed.data.id, empresaId!, parsed.data.estado);
     return successResponse({ success: true });
   } catch {
     return errorResponse('Error al actualizar pedido');

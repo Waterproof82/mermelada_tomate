@@ -1,71 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-
-export interface Promocion {
-  id: string;
-  empresa_id: string;
-  fecha_hora: string;
-  texto_promocion: string;
-  numero_envios: number;
-  imagen_url: string | null;
-  created_at: string;
-}
-
-export interface PedidoItem {
-  producto_id?: string;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-  complementos?: string[];
-}
-
-export interface CartItem {
-  item?: {
-    id: string;
-    name: string;
-    price: number;
-  };
-  quantity: number;
-  selectedComplements?: { name: string; price: number }[];
-}
-
-export interface Pedido {
-  id: string;
-  empresa_id: string;
-  cliente_id: string | null;
-  numero_pedido: number;
-  detalle_pedido: PedidoItem[];
-  total: number;
-  estado: string;
-  created_at: string;
-  clientes?: {
-    nombre: string;
-    email: string;
-    telefono: string;
-  };
-}
-
-export interface IPromocionRepository {
-  findAllByTenant(empresaId: string): Promise<Promocion[]>;
-  create(data: { empresaId: string; texto_promocion: string; imagen_url?: string; numero_envios: number }): Promise<Promocion>;
-  deleteAllByTenant(empresaId: string): Promise<void>;
-}
-
-export interface IPedidoRepository {
-  findAllByTenant(empresaId: string): Promise<Pedido[]>;
-  findById(id: string): Promise<Pedido | null>;
-  updateStatus(id: string, empresaId: string, estado: string): Promise<void>;
-  delete(id: string, empresaId: string): Promise<void>;
-  create(empresaId: string, clienteId: string | null, items: CartItem[], total: number): Promise<{ id: string; numero_pedido: number }>;
-  getStats(empresaId: string, mes: number, año: number): Promise<{
-    pedidosHoy: number;
-    pedidosMes: number;
-    totalHoy: number;
-    totalMes: number;
-    totalAno: number;
-    topPlatos: { nombre: string; cantidad: number; total: number }[];
-    topPlatosAno: { nombre: string; cantidad: number; total: number }[];
-  }>;
-}
+import { Promocion, Pedido, CartItem, PedidoItem } from "@/core/domain/entities/types";
+import { IPromocionRepository } from "@/core/domain/repositories/IPromocionRepository";
+import { IPedidoRepository } from "@/core/domain/repositories/IPedidoRepository";
 
 export class SupabasePromocionRepository implements IPromocionRepository {
   constructor(private readonly supabase: SupabaseClient) {}
@@ -161,7 +97,6 @@ export class SupabasePedidoRepository implements IPedidoRepository {
   }
 
   async create(empresaId: string, clienteId: string | null, items: CartItem[], total: number): Promise<{ id: string; numero_pedido: number }> {
-    // Get last pedido number
     const { data: lastOrder } = await this.supabase
       .from('pedidos')
       .select('numero_pedido')
@@ -228,43 +163,22 @@ export class SupabasePedidoRepository implements IPedidoRepository {
     const totalMes = pedidosMes.reduce((sum, p) => sum + (p.total || 0), 0);
     const totalAno = pedidosAno.reduce((sum, p) => sum + (p.total || 0), 0);
 
-    // Top platos del mes
-    const dishCount: Record<string, { nombre: string; cantidad: number; total: number }> = {};
-    pedidosMes.forEach(pedido => {
-      if (pedido.detalle_pedido) {
-        pedido.detalle_pedido.forEach((item: PedidoItem) => {
-          const key = String(item.nombre);
-          if (!dishCount[key]) {
-            dishCount[key] = { nombre: key, cantidad: 0, total: 0 };
-          }
-          dishCount[key].cantidad += Number(item.cantidad) || 1;
-          dishCount[key].total += (Number(item.precio) * (Number(item.cantidad) || 1));
-        });
-      }
-    });
-
-    const topPlatos = Object.values(dishCount)
-      .sort((a, b) => b.cantidad - a.cantidad)
-      .slice(0, 10);
-
-    // Top platos del año
-    const dishCountAno: Record<string, { nombre: string; cantidad: number; total: number }> = {};
-    pedidosAno.forEach(pedido => {
-      if (pedido.detalle_pedido) {
-        pedido.detalle_pedido.forEach((item: PedidoItem) => {
-          const key = String(item.nombre);
-          if (!dishCountAno[key]) {
-            dishCountAno[key] = { nombre: key, cantidad: 0, total: 0 };
-          }
-          dishCountAno[key].cantidad += Number(item.cantidad) || 1;
-          dishCountAno[key].total += (Number(item.precio) * (Number(item.cantidad) || 1));
-        });
-      }
-    });
-
-    const topPlatosAno = Object.values(dishCountAno)
-      .sort((a, b) => b.cantidad - a.cantidad)
-      .slice(0, 10);
+    const buildTopPlatos = (pedidosList: typeof pedidosFiltrados) => {
+      const dishCount: Record<string, { nombre: string; cantidad: number; total: number }> = {};
+      pedidosList.forEach(pedido => {
+        if (pedido.detalle_pedido) {
+          pedido.detalle_pedido.forEach((item: PedidoItem) => {
+            const key = String(item.nombre);
+            if (!dishCount[key]) {
+              dishCount[key] = { nombre: key, cantidad: 0, total: 0 };
+            }
+            dishCount[key].cantidad += Number(item.cantidad) || 1;
+            dishCount[key].total += (Number(item.precio) * (Number(item.cantidad) || 1));
+          });
+        }
+      });
+      return Object.values(dishCount).sort((a, b) => b.cantidad - a.cantidad).slice(0, 10);
+    };
 
     return {
       pedidosHoy: pedidosHoy.length,
@@ -272,8 +186,8 @@ export class SupabasePedidoRepository implements IPedidoRepository {
       totalHoy,
       totalMes,
       totalAno,
-      topPlatos,
-      topPlatosAno,
+      topPlatos: buildTopPlatos(pedidosMes),
+      topPlatosAno: buildTopPlatos(pedidosAno),
     };
   }
 }

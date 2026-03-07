@@ -1,4 +1,5 @@
-import { IClienteRepository, Cliente } from "@/core/infrastructure/database/SupabaseClienteEmpresaRepository";
+import { IClienteRepository } from "@/core/domain/repositories/IClienteRepository";
+import { Cliente } from "@/core/domain/entities/types";
 import { CreateClienteDTO, UpdateClienteDTO } from "@/core/application/dtos/cliente.dto";
 
 export class ClienteUseCase {

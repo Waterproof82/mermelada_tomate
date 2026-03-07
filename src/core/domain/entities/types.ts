@@ -83,3 +83,58 @@ export interface Empresa {
   direccion?: string | null;
   telefonoWhatsapp?: string | null;
 }
+
+export interface Cliente {
+  id: string;
+  empresaId: string;
+  nombre: string | null;
+  email: string | null;
+  telefono: string | null;
+  direccion: string | null;
+  aceptar_promociones: boolean | null;
+  created_at: string;
+}
+
+export interface PedidoItem {
+  producto_id?: string;
+  nombre: string;
+  precio: number;
+  cantidad: number;
+  complementos?: string[];
+}
+
+export interface CartItem {
+  item?: {
+    id: string;
+    name: string;
+    price: number;
+  };
+  quantity: number;
+  selectedComplements?: { name: string; price: number }[];
+}
+
+export interface Pedido {
+  id: string;
+  empresa_id: string;
+  cliente_id: string | null;
+  numero_pedido: number;
+  detalle_pedido: PedidoItem[];
+  total: number;
+  estado: string;
+  created_at: string;
+  clientes?: {
+    nombre: string;
+    email: string;
+    telefono: string;
+  };
+}
+
+export interface Promocion {
+  id: string;
+  empresa_id: string;
+  fecha_hora: string;
+  texto_promocion: string;
+  numero_envios: number;
+  imagen_url: string | null;
+  created_at: string;
+}

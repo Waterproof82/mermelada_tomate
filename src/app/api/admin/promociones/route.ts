@@ -2,24 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/brevo-email';
 import { deleteImageFromR2 } from '@/core/infrastructure/storage/s3-client';
-import { promocionRepository, empresaRepository, clienteRepository } from '@/core/infrastructure/database';
+import { promocionUseCase, empresaUseCase } from '@/core/infrastructure/database';
 import { requireAuth, errorResponse } from '@/core/infrastructure/api/helpers';
-
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
+import { escapeHtml } from '@/lib/html-utils';
 
 const createPromocionSchema = z.object({
   texto_promocion: z.string().min(1, 'El texto de promoción es requerido').max(1000),
   imagen_url: z.string().url().optional().nullable(),
 });
-
-function escapeHtml(text: string): string {
-  return text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
 
 function buildEmailHtml(params: {
   empresaLogoUrl: string;
@@ -63,7 +53,7 @@ export async function GET(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    const promociones = await promocionRepository.findAllByTenant(empresaId!);
+    const promociones = await promocionUseCase.getAll(empresaId!);
     return NextResponse.json({ promociones });
   } catch {
     return errorResponse('Error interno');
@@ -75,7 +65,7 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    const empresa = await empresaRepository.getById(empresaId!);
+    const empresa = await empresaUseCase.getById(empresaId!);
 
     const body = await request.json();
     const parsed = createPromocionSchema.safeParse(body);
@@ -85,33 +75,18 @@ export async function POST(request: NextRequest) {
 
     const { texto_promocion, imagen_url } = parsed.data;
 
-    // Get clientes with promotions - need to fetch from clienteRepository
-    const clientes = await clienteRepository.findAllByTenant(empresaId!);
-    const clientesConPromo = clientes.filter(c => c.aceptar_promociones && c.email);
-    const emails = clientesConPromo.map(c => c.email).filter(Boolean) as string[];
-    const numeroEnvios = emails.length;
+    const { promo, oldImageUrl, emailTargets } = await promocionUseCase.create(
+      empresaId!,
+      texto_promocion,
+      imagen_url,
+    );
 
-    // Get old promo to delete image
-    const oldPromos = await promocionRepository.findAllByTenant(empresaId!);
-    const oldPromo = oldPromos[0];
-
-    if (oldPromo?.imagen_url) {
-      await deleteImageFromR2(oldPromo.imagen_url);
+    if (oldImageUrl) {
+      await deleteImageFromR2(oldImageUrl);
     }
 
-    // Delete old promotions
-    await promocionRepository.deleteAllByTenant(empresaId!);
-
-    // Create new promotion
-    const promo = await promocionRepository.create({
-      empresaId: empresaId!,
-      texto_promocion,
-      imagen_url: imagen_url ?? undefined,
-      numero_envios: numeroEnvios,
-    });
-
-    // Send emails via Brevo
-    if (BREVO_API_KEY && numeroEnvios > 0 && emails.length > 0 && empresa) {
+    const BREVO_API_KEY = process.env.BREVO_API_KEY;
+    if (BREVO_API_KEY && emailTargets.length > 0 && empresa) {
       const empresaLogoUrl = empresa.logoUrl || '';
       const baseUrl = empresa.dominio ? `https://${empresa.dominio}` : '';
 
@@ -125,7 +100,7 @@ export async function POST(request: NextRequest) {
           empresaId: empresaId!,
         });
 
-        for (const email of emails) {
+        for (const email of emailTargets) {
           const personalizedHtml = emailHtml.replaceAll('__EMAIL__', encodeURIComponent(email));
           await sendEmail({
             to: [email],

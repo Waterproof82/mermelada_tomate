@@ -1,5 +1,6 @@
-import { IPedidoRepository } from "@/core/infrastructure/database/SupabasePromocionPedidoRepository";
-import { IClienteRepository } from "@/core/infrastructure/database/SupabaseClienteEmpresaRepository";
+import { IPedidoRepository } from "@/core/domain/repositories/IPedidoRepository";
+import { IClienteRepository } from "@/core/domain/repositories/IClienteRepository";
+import { Pedido } from "@/core/domain/entities/types";
 
 export interface CreatePedidoDTO {
   items: {
@@ -29,21 +30,26 @@ export class PedidoUseCase {
     private readonly clienteRepo: IClienteRepository
   ) {}
 
+  async getAll(empresaId: string): Promise<Pedido[]> {
+    return this.pedidoRepo.findAllByTenant(empresaId);
+  }
+
+  async updateStatus(id: string, empresaId: string, estado: string): Promise<void> {
+    return this.pedidoRepo.updateStatus(id, empresaId, estado);
+  }
+
   async create(empresaId: string, data: CreatePedidoDTO): Promise<{ id: string; numero_pedido: number }> {
-    // Upsert cliente by telefono
     const existingCliente = await this.clienteRepo.findByTelefono(data.telefono, empresaId);
-    
+
     let clienteId: string | null = null;
-    
+
     if (existingCliente) {
-      // Update existing cliente with new data
       await this.clienteRepo.update(existingCliente.id, empresaId, {
         nombre: data.nombre,
         email: data.email || null,
       });
       clienteId = existingCliente.id;
     } else {
-      // Create new cliente
       const newCliente = await this.clienteRepo.create({
         empresaId,
         nombre: data.nombre,
@@ -53,7 +59,6 @@ export class PedidoUseCase {
       clienteId = newCliente.id;
     }
 
-    // Create pedido
     return this.pedidoRepo.create(empresaId, clienteId, data.items, data.total);
   }
 

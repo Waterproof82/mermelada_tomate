@@ -9,6 +9,8 @@ import { CategoryUseCase } from '@/core/application/use-cases/category.use-case'
 import { ClienteUseCase } from '@/core/application/use-cases/cliente.use-case';
 import { EmpresaUseCase } from '@/core/application/use-cases/empresa.use-case';
 import { PedidoUseCase } from '@/core/application/use-cases/pedido.use-case';
+import { PromocionUseCase } from '@/core/application/use-cases/promocion.use-case';
+import { AuthAdminUseCase } from '@/core/application/use-cases/auth-admin.use-case';
 
 const supabase = getSupabaseClient();
 
@@ -26,3 +28,5 @@ export const categoryUseCase = new CategoryUseCase(categoryRepository);
 export const clienteUseCase = new ClienteUseCase(clienteRepository);
 export const empresaUseCase = new EmpresaUseCase(empresaRepository);
 export const pedidoUseCase = new PedidoUseCase(pedidoRepository, clienteRepository);
+export const promocionUseCase = new PromocionUseCase(promocionRepository, clienteRepository);
+export const authAdminUseCase = new AuthAdminUseCase(adminRepository);
