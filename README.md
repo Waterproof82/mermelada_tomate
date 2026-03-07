@@ -80,6 +80,8 @@ src/
 │   │       ├── category.use-case.ts        (CategoryUseCase)
 │   │       ├── cliente.use-case.ts         (ClienteUseCase)
 │   │       ├── empresa.use-case.ts          (EmpresaUseCase)
+│   │       ├── pedido.use-case.ts          (PedidoUseCase)
+│   │       ├── auth-admin.use-case.ts      (AuthAdminUseCase)
 │   │       └── get-menu.use-case.ts        (GetMenuUseCase)
 │   │
 │   └── infrastructure/              # Capa más externa
@@ -164,6 +166,43 @@ return validationErrorResponse('Error de validación');
 
 ---
 
+## Formato de Datos: Dominio vs Admin
+
+El proyecto usa **dos formatos** de datos:
+
+### Formato Dominio (camelCase)
+- Usado por **Use Cases** y **Home** (pública)
+- Ejemplo: `{ id, empresaId, categoriaId, titulo_es, nombre, categoriaComplementoDe }`
+
+### Formato Admin (snake_case)
+- Usado por el **Panel Admin** y APIs del admin
+- Ejemplo: `{ id, empresa_id, categoria_id, titulo_es, nombre_es, categoria_complemento_de }`
+
+### Transformación en Rutas API del Admin
+
+Las rutas API del admin transforman el formato dominio al formato admin:
+
+```typescript
+// API Route - transformar dominio → admin
+function toAdminProduct(prod: any) {
+  return {
+    id: prod.id,
+    empresa_id: prod.empresaId,
+    categoria_id: prod.categoriaId,
+    titulo_es: prod.titulo_es,
+    titulo_en: prod.translations?.en || null,
+    // ...
+  };
+}
+
+export async function GET(request: NextRequest) {
+  const products = await productUseCase.getAll(empresaId!);
+  return successResponse(products.map(toAdminProduct));
+}
+```
+
+---
+
 ## Subdominios
 
 ### Sistema Multi-tenant
@@ -226,6 +265,26 @@ npx tsx scripts/setup-r2-cors.ts
 | `pedidos` | Pedidos realizados | FK: `empresa_id`, `cliente_id` |
 | `perfiles_admin` | Admin users | FK: `id` → auth.users |
 | `promociones` | Promociones email | FK: `empresa_id` |
+
+### Métodos Disponibles
+
+#### Use Cases
+| Use Case | Métodos |
+|----------|---------|
+| ProductUseCase | `getAll`, `create`, `update`, `delete` |
+| CategoryUseCase | `getAll`, `create`, `update`, `delete` |
+| ClienteUseCase | `getAll`, `create`, `update`, `delete`, `togglePromoSubscription` |
+| EmpresaUseCase | `getById`, `update` |
+| PedidoUseCase | `create`, `getStats`, `delete` |
+| AuthAdminUseCase | `login`, `verifyToken` |
+
+#### Repositories
+| Repository | Métodos |
+|------------|---------|
+| IClienteRepository | `findAllByTenant`, `findByEmail`, `findByTelefono`, `create`, `update`, `delete` |
+| IEmpresaRepository | `getById`, `findByDomain`, `update` |
+| IPedidoRepository | `findAllByTenant`, `findById`, `updateStatus`, `delete`, `create`, `getStats` |
+| IPromocionRepository | `findAllByTenant`, `create`, `deleteAllByTenant` |
 
 ---
 

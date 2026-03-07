@@ -17,17 +17,39 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
       complementoObligatorio: row.complemento_obligatorio || false,
       categoriaPadreId: row.categoria_padre_id || null,
       translations: {
-        en: row.nombre_en,
-        fr: row.nombre_fr,
-        it: row.nombre_it,
-        de: row.nombre_de,
+        en: row.nombre_en || undefined,
+        fr: row.nombre_fr || undefined,
+        it: row.nombre_it || undefined,
+        de: row.nombre_de || undefined,
       },
       descripcionTranslations: {
-        en: row.descripcion_en,
-        fr: row.descripcion_fr,
-        it: row.descripcion_it,
-        de: row.descripcion_de,
+        en: row.descripcion_en || undefined,
+        fr: row.descripcion_fr || undefined,
+        it: row.descripcion_it || undefined,
+        de: row.descripcion_de || undefined,
       },
+    };
+  }
+
+  // Map to admin UI format (snake_case with all translation fields)
+  private mapToAdminFormat(row: any) {
+    return {
+      id: row.id,
+      empresa_id: row.empresa_id,
+      nombre_es: row.nombre_es,
+      nombre_en: row.nombre_en || null,
+      nombre_fr: row.nombre_fr || null,
+      nombre_it: row.nombre_it || null,
+      nombre_de: row.nombre_de || null,
+      descripcion_es: row.descripcion_es || null,
+      descripcion_en: row.descripcion_en || null,
+      descripcion_fr: row.descripcion_fr || null,
+      descripcion_it: row.descripcion_it || null,
+      descripcion_de: row.descripcion_de || null,
+      orden: row.orden || 0,
+      categoria_complemento_de: row.categoria_complemento_de || null,
+      complemento_obligatorio: row.complemento_obligatorio || false,
+      categoria_padre_id: row.categoria_padre_id || null,
     };
   }
 
@@ -58,12 +80,15 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
       .from("categorias")
       .select("*")
       .eq("empresa_id", empresaId)
-      .order("orden", { ascending: true });
+      .order("created_at", { ascending: false });
 
-    if (error) throw new Error(`DB Error fetching categories: ${error.message}`);
+    if (error) {
+      console.error('[CategoryRepo] Error fetching categories:', error.message);
+      throw new Error(`DB Error fetching categories: ${error.message}`);
+    }
 
-    // Return database format for admin UI compatibility
-    return data.map((row: any) => this.mapToDatabaseFormat(row));
+    // Return domain format (camelCase)
+    return data.map((row: any) => this.mapToDomain(row));
   }
 
   async create(data: CreateCategoryDTO): Promise<Category> {

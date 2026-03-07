@@ -9,7 +9,11 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // 1. Rutas públicas que no requieren JWT
-  const isPublicRoute = path === '/api/unsubscribe' || path.startsWith('/api/admin/promociones/unsubscribe');
+  const isPublicRoute = 
+    path === '/api/unsubscribe' || 
+    path.startsWith('/api/admin/promociones/unsubscribe') ||
+    path === '/api/admin/login' ||
+    path === '/api/admin/logout';
   
   if (path.startsWith('/api/admin') && !isPublicRoute) {
     const adminToken = request.cookies.get('admin_token')?.value;

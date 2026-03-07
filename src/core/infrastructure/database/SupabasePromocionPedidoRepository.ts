@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 export interface Promocion {
   id: string;
@@ -10,6 +10,40 @@ export interface Promocion {
   created_at: string;
 }
 
+export interface PedidoItem {
+  producto_id?: string;
+  nombre: string;
+  precio: number;
+  cantidad: number;
+  complementos?: string[];
+}
+
+export interface CartItem {
+  item?: {
+    id: string;
+    name: string;
+    price: number;
+  };
+  quantity: number;
+  selectedComplements?: { name: string; price: number }[];
+}
+
+export interface Pedido {
+  id: string;
+  empresa_id: string;
+  cliente_id: string | null;
+  numero_pedido: number;
+  detalle_pedido: PedidoItem[];
+  total: number;
+  estado: string;
+  created_at: string;
+  clientes?: {
+    nombre: string;
+    email: string;
+    telefono: string;
+  };
+}
+
 export interface IPromocionRepository {
   findAllByTenant(empresaId: string): Promise<Promocion[]>;
   create(data: { empresaId: string; texto_promocion: string; imagen_url?: string; numero_envios: number }): Promise<Promocion>;
@@ -17,9 +51,20 @@ export interface IPromocionRepository {
 }
 
 export interface IPedidoRepository {
-  findAllByTenant(empresaId: string): Promise<any[]>;
-  findById(id: string): Promise<any | null>;
+  findAllByTenant(empresaId: string): Promise<Pedido[]>;
+  findById(id: string): Promise<Pedido | null>;
   updateStatus(id: string, empresaId: string, estado: string): Promise<void>;
+  delete(id: string, empresaId: string): Promise<void>;
+  create(empresaId: string, clienteId: string | null, items: CartItem[], total: number): Promise<{ id: string; numero_pedido: number }>;
+  getStats(empresaId: string, mes: number, año: number): Promise<{
+    pedidosHoy: number;
+    pedidosMes: number;
+    totalHoy: number;
+    totalMes: number;
+    totalAno: number;
+    topPlatos: { nombre: string; cantidad: number; total: number }[];
+    topPlatosAno: { nombre: string; cantidad: number; total: number }[];
+  }>;
 }
 
 export class SupabasePromocionRepository implements IPromocionRepository {
@@ -67,7 +112,7 @@ export class SupabasePromocionRepository implements IPromocionRepository {
 export class SupabasePedidoRepository implements IPedidoRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  async findAllByTenant(empresaId: string): Promise<any[]> {
+  async findAllByTenant(empresaId: string): Promise<Pedido[]> {
     const { data, error } = await this.supabase
       .from('pedidos')
       .select(`
@@ -81,7 +126,7 @@ export class SupabasePedidoRepository implements IPedidoRepository {
     return data || [];
   }
 
-  async findById(id: string): Promise<any | null> {
+  async findById(id: string): Promise<Pedido | null> {
     const { data, error } = await this.supabase
       .from('pedidos')
       .select(`
@@ -103,5 +148,132 @@ export class SupabasePedidoRepository implements IPedidoRepository {
       .eq('empresa_id', empresaId);
 
     if (error) throw new Error(`DB Error: ${error.message}`);
+  }
+
+  async delete(id: string, empresaId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('pedidos')
+      .delete()
+      .eq('id', id)
+      .eq('empresa_id', empresaId);
+
+    if (error) throw new Error(`DB Error: ${error.message}`);
+  }
+
+  async create(empresaId: string, clienteId: string | null, items: CartItem[], total: number): Promise<{ id: string; numero_pedido: number }> {
+    // Get last pedido number
+    const { data: lastOrder } = await this.supabase
+      .from('pedidos')
+      .select('numero_pedido')
+      .eq('empresa_id', empresaId)
+      .order('numero_pedido', { ascending: false })
+      .limit(1)
+      .single();
+
+    const nuevoNumeroPedido = (lastOrder?.numero_pedido || 0) + 1;
+
+    const { data: pedido, error } = await this.supabase
+      .from('pedidos')
+      .insert({
+        empresa_id: empresaId,
+        numero_pedido: nuevoNumeroPedido,
+        cliente_id: clienteId,
+        detalle_pedido: items.map(ci => ({
+          producto_id: ci.item?.id,
+          nombre: ci.item?.name,
+          precio: ci.item?.price,
+          cantidad: ci.quantity,
+          complementos: ci.selectedComplements || [],
+        })),
+        total: total,
+        estado: 'pendiente',
+      })
+      .select('id, numero_pedido')
+      .single();
+
+    if (error) throw new Error(`DB Error: ${error.message}`);
+    return { id: pedido.id, numero_pedido: pedido.numero_pedido };
+  }
+
+  async getStats(empresaId: string, mes: number, año: number): Promise<{
+    pedidosHoy: number;
+    pedidosMes: number;
+    totalHoy: number;
+    totalMes: number;
+    totalAno: number;
+    topPlatos: { nombre: string; cantidad: number; total: number }[];
+    topPlatosAno: { nombre: string; cantidad: number; total: number }[];
+  }> {
+    const now = new Date();
+    const todayStart = new Date(año, mes, now.getDate()).toISOString();
+    const monthStart = new Date(año, mes, 1).toISOString();
+    const monthEnd = new Date(año, mes + 1, 0, 23, 59, 59).toISOString();
+    const yearStart = new Date(año, 0, 1).toISOString();
+
+    const { data: pedidos } = await this.supabase
+      .from('pedidos')
+      .select('*')
+      .eq('empresa_id', empresaId);
+
+    const pedidosFiltrados = pedidos || [];
+
+    const pedidosHoy = pedidosFiltrados.filter(p => {
+      const fecha = new Date(p.created_at);
+      return fecha >= new Date(todayStart) && fecha <= new Date(monthEnd);
+    });
+    const pedidosMes = pedidosFiltrados.filter(p => new Date(p.created_at) >= new Date(monthStart) && new Date(p.created_at) <= new Date(monthEnd));
+    const pedidosAno = pedidosFiltrados.filter(p => new Date(p.created_at) >= new Date(yearStart));
+
+    const totalHoy = pedidosHoy.reduce((sum, p) => sum + (p.total || 0), 0);
+    const totalMes = pedidosMes.reduce((sum, p) => sum + (p.total || 0), 0);
+    const totalAno = pedidosAno.reduce((sum, p) => sum + (p.total || 0), 0);
+
+    // Top platos del mes
+    const dishCount: Record<string, { nombre: string; cantidad: number; total: number }> = {};
+    pedidosMes.forEach(pedido => {
+      if (pedido.detalle_pedido) {
+        pedido.detalle_pedido.forEach((item: PedidoItem) => {
+          const key = String(item.nombre);
+          if (!dishCount[key]) {
+            dishCount[key] = { nombre: key, cantidad: 0, total: 0 };
+          }
+          dishCount[key].cantidad += Number(item.cantidad) || 1;
+          dishCount[key].total += (Number(item.precio) * (Number(item.cantidad) || 1));
+        });
+      }
+    });
+
+    const topPlatos = Object.values(dishCount)
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .slice(0, 10);
+
+    // Top platos del año
+    const dishCountAno: Record<string, { nombre: string; cantidad: number; total: number }> = {};
+    pedidosAno.forEach(pedido => {
+      if (pedido.detalle_pedido) {
+        pedido.detalle_pedido.forEach((item: PedidoItem) => {
+          const key = String(item.nombre);
+          if (!dishCountAno[key]) {
+            dishCountAno[key] = { nombre: key, cantidad: 0, total: 0 };
+          }
+          dishCountAno[key].cantidad += Number(item.cantidad) || 1;
+          dishCountAno[key].total += (Number(item.precio) * (Number(item.cantidad) || 1));
+        });
+      }
+    });
+
+    const topPlatosAno = Object.values(dishCountAno)
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .slice(0, 10);
+
+    return {
+      pedidosHoy: pedidosHoy.length,
+      pedidosMes: pedidosMes.length,
+      totalHoy,
+      totalMes,
+      totalAno,
+      topPlatos,
+      topPlatosAno,
+    };
   }
 }

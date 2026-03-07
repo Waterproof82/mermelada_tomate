@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { sendEmail } from '@/lib/brevo-email';
 import { deleteImageFromR2 } from '@/core/infrastructure/storage/s3-client';
-import { promocionRepository, adminRepository } from '@/core/infrastructure/database';
+import { promocionRepository, adminRepository, empresaRepository, clienteRepository } from '@/core/infrastructure/database';
 
 const ADMIN_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
@@ -46,14 +46,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { getSupabaseClient } = await import('@/core/infrastructure/database/supabase-client');
-    const supabase = getSupabaseClient();
-
-    const { data: empresa } = await supabase
-      .from('empresas')
-      .select('nombre, logo_url, email_notification, dominio')
-      .eq('id', empresaId)
-      .single();
+    const empresa = await empresaRepository.getById(empresaId);
 
     const body = await request.json();
     const { texto_promocion, imagen_url } = body;
@@ -62,23 +55,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'El texto de promoción es requerido' }, { status: 400 });
     }
 
-    // Get clientes with promotions
-    const { data: clientesConPromo } = await supabase
-      .from('clientes')
-      .select('email')
-      .eq('empresa_id', empresaId)
-      .eq('aceptar_promociones', true)
-      .not('email', 'is', null);
-
-    const emails = clientesConPromo?.map(c => c.email).filter(Boolean) || [];
+    // Get clientes with promotions - need to fetch from clienteRepository
+    const clientes = await clienteRepository.findAllByTenant(empresaId);
+    const clientesConPromo = clientes.filter(c => c.aceptar_promociones && c.email);
+    const emails = clientesConPromo.map(c => c.email).filter(Boolean) as string[];
     const numeroEnvios = emails.length;
 
-    // Delete old promo image if exists
-    const { data: oldPromo } = await supabase
-      .from('promociones')
-      .select('imagen_url')
-      .eq('empresa_id', empresaId)
-      .single();
+    // Get old promo to delete image
+    const oldPromos = await promocionRepository.findAllByTenant(empresaId);
+    const oldPromo = oldPromos[0];
 
     if (oldPromo?.imagen_url) {
       await deleteImageFromR2(oldPromo.imagen_url);
@@ -95,11 +80,11 @@ export async function POST(request: Request) {
       numero_envios: numeroEnvios,
     });
 
-    // Send emails via Brevo
-    if (BREVO_API_KEY && numeroEnvios > 0 && emails.length > 0) {
-      const empresaLogoUrl = empresa?.logo_url || '';
+    // Send emails via Brevo - use empresa from earlier query
+    if (BREVO_API_KEY && numeroEnvios > 0 && emails.length > 0 && empresa) {
+      const empresaLogoUrl = empresa.logoUrl || '';
       
-      const baseUrl = empresa?.dominio 
+      const baseUrl = empresa.dominio 
       ? `https://${empresa.dominio}` 
       : '';
     
@@ -115,7 +100,7 @@ export async function POST(request: Request) {
 </head>
 <body style="margin: 0; padding: 20px; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow-hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    ${empresaLogoUrl ? `<img src="${empresaLogoUrl}" alt="${empresa?.nombre || 'Empresa'}" style="width: 100%; max-width: 200px; display: block; margin: 20px auto;">` : ''}
+    ${empresaLogoUrl ? `<img src="${empresaLogoUrl}" alt="${empresa.nombre || 'Empresa'}" style="width: 100%; max-width: 200px; display: block; margin: 20px auto;">` : ''}
     <div style="padding: 20px;">
       <h2 style="margin: 0 0 16px; color: #333; text-align: center;">Nueva promoción disponible</h2>
       <div style="background-color: #f9f9f9; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
@@ -140,8 +125,8 @@ export async function POST(request: Request) {
           to: [email],
           subject: 'Nueva promocion disponible',
           htmlContent: personalizedHtml,
-          senderName: empresa?.nombre || 'Promociones',
-          senderEmail: empresa?.email_notification || 'a369cb001@smtp-brevo.com',
+          senderName: empresa.nombre || 'Promociones',
+          senderEmail: empresa.emailNotification || 'a369cb001@smtp-brevo.com',
         });
       }
     }

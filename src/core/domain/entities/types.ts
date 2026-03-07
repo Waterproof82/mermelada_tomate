@@ -22,7 +22,7 @@ export interface Product {
 export interface Category {
   id: string;
   empresaId: string;
-  nombre: string;
+  nombre: string | null;
   descripcion: string | null;
   orden: number;
   categoriaComplementoDe: string | null;

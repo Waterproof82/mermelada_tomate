@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clienteUseCase } from '@/core/infrastructure/database';
 
 // Función helper para obtener base URL
 function getBaseUrl(): string {
@@ -20,32 +21,13 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${getBaseUrl()}/?error=invalid`);
     }
 
-    const { getSupabaseClient } = await import('@/core/infrastructure/database/supabase-client');
-    const supabase = getSupabaseClient();
+    const nuevoValor = await clienteUseCase.togglePromoSubscription(email, empresaId);
 
-    // Buscar cliente por email y empresa
-    const { data: cliente, error: clienteError } = await supabase
-      .from('clientes')
-      .select('*')
-      .eq('empresa_id', empresaId)
-      .eq('email', email)
-      .single();
+    console.log('[Unsubscribe] Toggling aceptar_promociones:', { new: nuevoValor });
 
-    console.log('[Unsubscribe] Cliente found:', { cliente, clienteError });
-
-    if (clienteError || !cliente) {
+    if (nuevoValor === null) {
       return NextResponse.redirect(`${getBaseUrl()}/?error=notfound`);
     }
-
-    // Toggle: cambiar valor de aceptar_promociones
-    const nuevoValor = !cliente.aceptar_promociones;
-
-    console.log('[Unsubscribe] Toggling aceptar_promociones:', { current: cliente.aceptar_promociones, new: nuevoValor });
-
-    await supabase
-      .from('clientes')
-      .update({ aceptar_promociones: nuevoValor })
-      .eq('id', cliente.id);
 
     const mensaje = nuevoValor ? 'promo=on' : 'promo=off';
     console.log('[Unsubscribe] Redirecting to:', `${getBaseUrl()}/?${mensaje}`);

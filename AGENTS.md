@@ -111,8 +111,47 @@ import {
   empresaRepository,  // IEmpresaRepository
   promocionRepository, // IPromocionRepository
   pedidoRepository,   // IPedidoRepository
+  pedidoUseCase,     // PedidoUseCase (nuevo)
   adminRepository,   // IAdminRepository
 } from '@/core/infrastructure/database';
+```
+
+### Métodos de Use Cases
+
+| Use Case | Métodos |
+|----------|---------|
+| **ProductUseCase** | `getAll`, `create`, `update`, `delete` |
+| **CategoryUseCase** | `getAll`, `create`, `update`, `delete` |
+| **ClienteUseCase** | `getAll`, `create`, `update`, `delete`, `togglePromoSubscription` |
+| **EmpresaUseCase** | `getById`, `update` |
+| **PedidoUseCase** | `create`, `getStats`, `delete` |
+| **AuthAdminUseCase** | `login`, `verifyToken` |
+
+### Métodos de Repositories
+
+| Repository | Métodos |
+|------------|---------|
+| **IClienteRepository** | `findAllByTenant`, `findByEmail`, `findByTelefono`, `create`, `update`, `delete` |
+| **IEmpresaRepository** | `getById`, `findByDomain`, `update` |
+| **IPedidoRepository** | `findAllByTenant`, `findById`, `updateStatus`, `delete`, `create`, `getStats` |
+| **IPromocionRepository** | `findAllByTenant`, `create`, `deleteAllByTenant` |
+
+### Formato de Datos: Dominio vs Admin
+
+Los repositories devuelven formato **dominio** (camelCase). Las rutas API del admin deben transformar al formato **admin** (snake_case):
+
+```typescript
+// API Route - transformar dominio → admin
+function toAdminProduct(prod: any) {
+  return {
+    id: prod.id,
+    empresa_id: prod.empresaId,
+    categoria_id: prod.categoriaId,
+    titulo_es: prod.titulo_es,
+    titulo_en: prod.translations?.en || null,
+    // ...
+  };
+}
 ```
 
 ## Supabase - Estructura de Tablas
@@ -152,8 +191,15 @@ import {
 ### Footer
 - Fondo negro, muestra logo, descripción, fb, instagram, dirección, WhatsApp, email y mapa (iframe)
 
-### Middleware
+### Middleware / Proxy
 - `src/proxy.ts` - autentica JWT para `/api/admin/*`
+- Rutas públicas que NO requieren JWT:
+  - `/api/admin/login` - Login de admin
+  - `/api/admin/logout` - Logout de admin
+  - `/api/unsubscribe` - Darse de baja de promociones
+  - `/api/admin/promociones/unsubscribe` - Toggle suscripción promo
+
+> ⚠️ **IMPORTANTE**: Si agregás nuevas rutas públicas en el admin, agregarlas al proxy en `isPublicRoute`
 
 ### Imágenes
 - Se optimizan en cliente (480x480, WebP, 80%)
@@ -168,6 +214,8 @@ import {
 ### Supabase
 - Cliente singleton en `core/infrastructure/database/supabase-client.ts`
 - **NUNCA** crear nuevos clientes con `createClient` en las rutas
+- Todos los repositories deben inyectar el cliente via constructor: `constructor(private readonly supabase: SupabaseClient) {}`
+- **NUNCA** usar `getSupabaseAdmin()` interno - usar siempre el singleton
 
 ### Validation
 - **TODAS** las rutas API usan Zod schemas

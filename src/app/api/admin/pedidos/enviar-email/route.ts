@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { sendEmail } from '@/lib/brevo-email';
+import { empresaRepository } from '@/core/infrastructure/database';
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
@@ -13,6 +14,14 @@ interface CartItem {
   };
   quantity: number;
   selectedComplements?: { name: string; price: number }[];
+}
+
+function parseMainDomain(domain: string): string {
+  const subdomainPedidos = 'pedidos';
+  const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
+  return isPedidos 
+    ? domain.replace(/^pedidos\./, '').replace(/-pedidos$/, '')
+    : domain;
 }
 
 async function getDomainFromHeaders(): Promise<string> {
@@ -123,31 +132,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email service not configured' }, { status: 500 });
     }
 
-    const { getSupabaseClient } = await import('@/core/infrastructure/database/supabase-client');
-    const supabase = getSupabaseClient();
     const domain = await getDomainFromHeaders();
-    
-    const subdomainPedidos = 'pedidos';
-    const isPedidos = domain.startsWith(subdomainPedidos + '.') || domain.includes('-pedidos');
-    const mainDomain = isPedidos 
-      ? domain.replace(/^pedidos\./, '').replace(/-pedidos$/, '')
-      : domain;
+    const mainDomain = parseMainDomain(domain);
 
-    let { data: empresa } = await supabase
-      .from('empresas')
-      .select('email_notification, email, nombre')
-      .eq('dominio', mainDomain)
-      .single();
-
-    // Si no encuentra, buscar por subdomain_pedidos
-    if (!empresa && isPedidos) {
-      const { data: empresaSubdomain } = await supabase
-        .from('empresas')
-        .select('email_notification, email, nombre')
-        .eq('subdomain_pedidos', true)
-        .single();
-      if (empresaSubdomain) empresa = empresaSubdomain;
-    }
+    const empresa = await empresaRepository.findByDomain(mainDomain);
 
     if (!empresa) {
       return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 });

@@ -3,14 +3,39 @@ import { categoryUseCase } from '@/core/infrastructure/database';
 import { createCategorySchema, updateCategorySchema, categoryIdSchema } from '@/core/application/dtos/category.dto';
 import { requireAuth, successResponse, errorResponse, validationErrorResponse } from '@/core/infrastructure/api/helpers';
 
+// Transform domain format to admin UI format
+function toAdminCategory(cat: any) {
+  return {
+    id: cat.id,
+    empresa_id: cat.empresaId,
+    nombre_es: cat.nombre,
+    nombre_en: cat.translations?.en || null,
+    nombre_fr: cat.translations?.fr || null,
+    nombre_it: cat.translations?.it || null,
+    nombre_de: cat.translations?.de || null,
+    descripcion_es: cat.descripcion,
+    descripcion_en: cat.descripcionTranslations?.en || null,
+    descripcion_fr: cat.descripcionTranslations?.fr || null,
+    descripcion_it: cat.descripcionTranslations?.it || null,
+    descripcion_de: cat.descripcionTranslations?.de || null,
+    orden: cat.orden || 0,
+    categoria_complemento_de: cat.categoriaComplementoDe,
+    complemento_obligatorio: cat.complementoObligatorio || false,
+    categoria_padre_id: cat.categoriaPadreId,
+  };
+}
+
 export async function GET(request: NextRequest) {
   const { empresaId, error: authError } = await requireAuth(request);
   if (authError) return authError;
 
   try {
     const categories = await categoryUseCase.getAll(empresaId!);
-    return successResponse(categories);
-  } catch {
+    // Transform to admin UI format
+    const adminCategories = categories.map(toAdminCategory);
+    return successResponse(adminCategories);
+  } catch (error) {
+    console.error('[API /admin/categorias] Error:', error);
     return errorResponse('Error al obtener categorías');
   }
 }
@@ -28,7 +53,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const category = await categoryUseCase.create(parsed.data);
-    return successResponse(category, 201);
+    return successResponse(toAdminCategory(category), 201);
   } catch {
     return errorResponse('Error al crear categoría');
   }
@@ -56,7 +81,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const category = await categoryUseCase.update(idParsed.data.id, empresaId!, parsed.data);
-    return successResponse(category);
+    return successResponse(toAdminCategory(category));
   } catch {
     return errorResponse('Error al actualizar categoría');
   }

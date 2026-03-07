@@ -1,19 +1,6 @@
-import { IAdminRepository } from "@/core/domain/repositories/IAdminRepository";
 import { Empresa } from "@/core/domain/entities/types";
 import { UpdateEmpresaDTO } from "@/core/application/dtos/empresa.dto";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-
-function getSupabaseAdmin(): SupabaseClient {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
+import { SupabaseClient } from "@supabase/supabase-js";
 
 export interface Cliente {
   id: string;
@@ -28,8 +15,10 @@ export interface Cliente {
 
 export interface IClienteRepository {
   findAllByTenant(empresaId: string): Promise<Cliente[]>;
-  create(data: { empresaId: string; nombre?: string; email?: string; telefono?: string; direccion?: string }): Promise<Cliente>;
-  update(id: string, empresaId: string, data: Partial<UpdateEmpresaDTO & { nombre?: string; email?: string; telefono?: string; direccion?: string; aceptar_promociones?: boolean }>): Promise<void>;
+  findByEmail(email: string, empresaId: string): Promise<Cliente | null>;
+  findByTelefono(telefono: string, empresaId: string): Promise<Cliente | null>;
+  create(data: { empresaId: string; nombre?: string | null; email?: string | null; telefono?: string | null; direccion?: string | null }): Promise<Cliente>;
+  update(id: string, empresaId: string, data: Partial<{ nombre?: string | null; email?: string | null; telefono?: string | null; direccion?: string | null; aceptar_promociones?: boolean | null }>): Promise<void>;
   delete(id: string, empresaId: string): Promise<void>;
 }
 
@@ -62,6 +51,42 @@ export class SupabaseClienteRepository implements IClienteRepository {
       ...c,
       numero_pedidos: pedidosCount[c.id] || 0
     })).sort((a: any, b: any) => b.numero_pedidos - a.numero_pedidos) || [];
+  }
+
+  async findByEmail(email: string, empresaId: string): Promise<Cliente | null> {
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // Try case insensitive first
+    const { data: cliente } = await this.supabase
+      .from('clientes')
+      .select('*')
+      .eq('empresa_id', empresaId)
+      .ilike('email', normalizedEmail)
+      .single();
+
+    if (cliente) return cliente;
+
+    // Try exact match if case insensitive fails
+    const { data: clienteExact } = await this.supabase
+      .from('clientes')
+      .select('*')
+      .eq('empresa_id', empresaId)
+      .eq('email', normalizedEmail)
+      .single();
+
+    return clienteExact || null;
+  }
+
+  async findByTelefono(telefono: string, empresaId: string): Promise<Cliente | null> {
+    const { data: cliente, error } = await this.supabase
+      .from('clientes')
+      .select('*')
+      .eq('empresa_id', empresaId)
+      .eq('telefono', telefono)
+      .single();
+
+    if (error) return null;
+    return cliente;
   }
 
   async create(data: { empresaId: string; nombre?: string; email?: string; telefono?: string; direccion?: string }): Promise<Cliente> {
@@ -113,6 +138,7 @@ export class SupabaseClienteRepository implements IClienteRepository {
 // Empresa Repository
 export interface IEmpresaRepository {
   getById(empresaId: string): Promise<Partial<Empresa> | null>;
+  findByDomain(dominio: string): Promise<{ id: string; nombre: string; email_notification: string | null; telefono_whatsapp: string | null } | null>;
   update(empresaId: string, data: UpdateEmpresaDTO): Promise<void>;
 }
 
@@ -122,7 +148,7 @@ export class SupabaseEmpresaRepository implements IEmpresaRepository {
   async getById(empresaId: string): Promise<Partial<Empresa> | null> {
     const { data: empresa } = await this.supabase
       .from('empresas')
-      .select('email_notification, telefono_whatsapp, nombre, logo_url, fb, instagram, url_mapa, direccion')
+      .select('email_notification, telefono_whatsapp, nombre, logo_url, fb, instagram, url_mapa, direccion, dominio')
       .eq('id', empresaId)
       .single();
 
@@ -131,7 +157,7 @@ export class SupabaseEmpresaRepository implements IEmpresaRepository {
     return {
       id: empresaId,
       nombre: empresa.nombre,
-      dominio: '',
+      dominio: empresa.dominio || '',
       logoUrl: empresa.logo_url,
       mostrarCarrito: false,
       moneda: 'EUR',
@@ -156,5 +182,33 @@ export class SupabaseEmpresaRepository implements IEmpresaRepository {
       .eq('id', empresaId);
 
     if (error) throw new Error(`DB Error: ${error.message}`);
+  }
+
+  async findByDomain(dominio: string): Promise<{ id: string; nombre: string; email_notification: string | null; telefono_whatsapp: string | null } | null> {
+    // Try main domain
+    const { data: empresa } = await this.supabase
+      .from('empresas')
+      .select('id, nombre, email_notification, telefono_whatsapp')
+      .eq('dominio', dominio)
+      .single();
+
+    if (empresa) return empresa;
+
+    // Try subdomain_pedidos
+    const subdomainPedidos = 'pedidos';
+    const isPedidos = dominio.startsWith(`${subdomainPedidos}.`) || dominio.includes('-pedidos');
+    
+    if (isPedidos) {
+      const mainDomainFromSubdomain = dominio.split('.').slice(1).join('.');
+      const { data: empresaSubdomain } = await this.supabase
+        .from('empresas')
+        .select('id, nombre, email_notification, telefono_whatsapp')
+        .eq('dominio', mainDomainFromSubdomain)
+        .single();
+      
+      return empresaSubdomain || null;
+    }
+
+    return null;
   }
 }
