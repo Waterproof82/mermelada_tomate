@@ -1,374 +1,144 @@
-[
-  {
-    "table_schema": "public",
-    "table_name": "categorias",
-    "columns": [
-      {
-        "column_name": "id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": "uuid_generate_v4()"
-      },
-      {
-        "column_name": "empresa_id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "nombre_es",
-        "data_type": "text",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "nombre_en",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "nombre_fr",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "nombre_it",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "nombre_de",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "orden",
-        "data_type": "integer",
-        "is_nullable": "YES",
-        "default": "0"
-      },
-      {
-        "column_name": "created_at",
-        "data_type": "timestamp with time zone",
-        "is_nullable": "YES",
-        "default": "timezone('utc'::text, now())"
-      }
-    ]
-  },
-  {
-    "table_schema": "public",
-    "table_name": "clientes",
-    "columns": [
-      {
-        "column_name": "id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": "uuid_generate_v4()"
-      },
-      {
-        "column_name": "empresa_id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "email",
-        "data_type": "text",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "nombre",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "telefono",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "aceptar_promociones",
-        "data_type": "boolean",
-        "is_nullable": "YES",
-        "default": "true"
-      },
-      {
-        "column_name": "created_at",
-        "data_type": "timestamp with time zone",
-        "is_nullable": "YES",
-        "default": "timezone('utc'::text, now())"
-      }
-    ]
-  },
-  {
-    "table_schema": "public",
-    "table_name": "empresas",
-    "columns": [
-      {
-        "column_name": "id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": "uuid_generate_v4()"
-      },
-      {
-        "column_name": "nombre",
-        "data_type": "text",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "dominio",
-        "data_type": "text",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "logo_url",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "mostrar_carrito",
-        "data_type": "boolean",
-        "is_nullable": "YES",
-        "default": "true"
-      },
-      {
-        "column_name": "moneda",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": "'EUR'::text"
-      },
-      {
-        "column_name": "created_at",
-        "data_type": "timestamp with time zone",
-        "is_nullable": "YES",
-        "default": "timezone('utc'::text, now())"
-      }
-    ]
-  },
-  {
-    "table_schema": "public",
-    "table_name": "pedidos",
-    "columns": [
-      {
-        "column_name": "id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": "uuid_generate_v4()"
-      },
-      {
-        "column_name": "numero_pedido",
-        "data_type": "integer",
-        "is_nullable": "NO",
-        "default": "nextval('pedidos_numero_pedido_seq'::regclass)"
-      },
-      {
-        "column_name": "empresa_id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "cliente_email",
-        "data_type": "text",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "cliente_telefono",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "total",
-        "data_type": "numeric",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "moneda",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": "'EUR'::text"
-      },
-      {
-        "column_name": "detalle_pedido",
-        "data_type": "jsonb",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "estado",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": "'pendiente'::text"
-      },
-      {
-        "column_name": "created_at",
-        "data_type": "timestamp with time zone",
-        "is_nullable": "YES",
-        "default": "timezone('utc'::text, now())"
-      }
-    ]
-  },
-  {
-    "table_schema": "public",
-    "table_name": "perfiles_admin",
-    "columns": [
-      {
-        "column_name": "id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "empresa_id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "nombre_completo",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "rol",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": "'admin'::text"
-      },
-      {
-        "column_name": "created_at",
-        "data_type": "timestamp with time zone",
-        "is_nullable": "YES",
-        "default": "timezone('utc'::text, now())"
-      }
-    ]
-  },
-  {
-    "table_schema": "public",
-    "table_name": "productos",
-    "columns": [
-      {
-        "column_name": "id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": "uuid_generate_v4()"
-      },
-      {
-        "column_name": "empresa_id",
-        "data_type": "uuid",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "categoria_id",
-        "data_type": "uuid",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "titulo_es",
-        "data_type": "text",
-        "is_nullable": "NO",
-        "default": null
-      },
-      {
-        "column_name": "titulo_en",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "titulo_fr",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "titulo_it",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "titulo_de",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "descripcion_es",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "descripcion_en",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "descripcion_fr",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "descripcion_it",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "descripcion_de",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "precio",
-        "data_type": "numeric",
-        "is_nullable": "NO",
-        "default": "0.00"
-      },
-      {
-        "column_name": "foto_url",
-        "data_type": "text",
-        "is_nullable": "YES",
-        "default": null
-      },
-      {
-        "column_name": "es_especial",
-        "data_type": "boolean",
-        "is_nullable": "YES",
-        "default": "false"
-      },
-      {
-        "column_name": "activo",
-        "data_type": "boolean",
-        "is_nullable": "YES",
-        "default": "true"
-      },
-      {
-        "column_name": "created_at",
-        "data_type": "timestamp with time zone",
-        "is_nullable": "YES",
-        "default": "timezone('utc'::text, now())"
-      }
-    ]
-  }
-]
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.categorias (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  empresa_id uuid NOT NULL,
+  nombre_es text NOT NULL,
+  nombre_en text,
+  nombre_fr text,
+  nombre_it text,
+  nombre_de text,
+  orden integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  categoria_complemento_de uuid,
+  complemento_obligatorio boolean DEFAULT false,
+  categoria_padre_id uuid,
+  descripcion_es text,
+  descripcion_en text,
+  descripcion_fr text,
+  descripcion_it text,
+  descripcion_de text,
+  CONSTRAINT categorias_pkey PRIMARY KEY (id),
+  CONSTRAINT categorias_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id),
+  CONSTRAINT categorias_categoria_complemento_de_fkey FOREIGN KEY (categoria_complemento_de) REFERENCES public.categorias(id),
+  CONSTRAINT categorias_categoria_padre_id_fkey FOREIGN KEY (categoria_padre_id) REFERENCES public.categorias(id)
+);
+CREATE TABLE public.clientes (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  empresa_id uuid NOT NULL,
+  email text,
+  nombre text,
+  telefono text,
+  aceptar_promociones boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  direccion text,
+  CONSTRAINT clientes_pkey PRIMARY KEY (id),
+  CONSTRAINT clientes_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id)
+);
+CREATE TABLE public.empresas (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  nombre text NOT NULL,
+  dominio text NOT NULL UNIQUE,
+  logo_url text,
+  mostrar_carrito boolean DEFAULT true,
+  moneda text DEFAULT 'EUR'::text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  subdomain_pedidos text UNIQUE,
+  email_notification text,
+  url_image text,
+  descripcion_es text,
+  descripcion_en text,
+  descripcion_fr text,
+  descripcion_it text,
+  descripcion_de text,
+  titulo text,
+  subtitulo text,
+  subtitulo2_es text,
+  subtitulo2_en text,
+  subtitulo2_fr text,
+  subtitulo2_it text,
+  subtitulo2_de text,
+  footer1_es text,
+  footer1_en text,
+  footer1_fr text,
+  footer1_it text,
+  footer1_de text,
+  footer2_es text,
+  footer2_en text,
+  footer2_fr text,
+  footer2_it text,
+  footer2_de text,
+  color_primary character varying DEFAULT '#008C45'::character varying,
+  color_primary_foreground character varying DEFAULT '#FFFFFF'::character varying,
+  color_secondary character varying DEFAULT '#F7E7CE'::character varying,
+  color_secondary_foreground character varying DEFAULT '#3C2415'::character varying,
+  color_accent character varying DEFAULT '#CF0921'::character varying,
+  color_accent_foreground character varying DEFAULT '#FFFFFF'::character varying,
+  color_background character varying DEFAULT '#FDFBF7'::character varying,
+  color_foreground character varying DEFAULT '#1A1612'::character varying,
+  telefono_whatsapp text,
+  direccion text,
+  fb text,
+  instagram text,
+  url_mapa text,
+  CONSTRAINT empresas_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.pedidos (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  numero_pedido integer NOT NULL DEFAULT nextval('pedidos_numero_pedido_seq'::regclass),
+  empresa_id uuid NOT NULL,
+  total numeric NOT NULL,
+  moneda text DEFAULT 'EUR'::text,
+  detalle_pedido jsonb,
+  estado text DEFAULT 'pendiente'::text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  cliente_id uuid,
+  CONSTRAINT pedidos_pkey PRIMARY KEY (id),
+  CONSTRAINT pedidos_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id),
+  CONSTRAINT pedidos_cliente_id_fkey FOREIGN KEY (cliente_id) REFERENCES public.clientes(id)
+);
+CREATE TABLE public.perfiles_admin (
+  id uuid NOT NULL,
+  empresa_id uuid NOT NULL,
+  nombre_completo text,
+  rol text DEFAULT 'admin'::text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT perfiles_admin_pkey PRIMARY KEY (id),
+  CONSTRAINT perfiles_admin_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
+  CONSTRAINT perfiles_admin_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id)
+);
+CREATE TABLE public.productos (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  empresa_id uuid NOT NULL,
+  categoria_id uuid,
+  titulo_es text NOT NULL,
+  titulo_en text,
+  titulo_fr text,
+  titulo_it text,
+  titulo_de text,
+  descripcion_es text,
+  descripcion_en text,
+  descripcion_fr text,
+  descripcion_it text,
+  descripcion_de text,
+  precio numeric NOT NULL DEFAULT 0.00,
+  foto_url text,
+  es_especial boolean DEFAULT false,
+  activo boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT productos_pkey PRIMARY KEY (id),
+  CONSTRAINT productos_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id),
+  CONSTRAINT productos_categoria_id_fkey FOREIGN KEY (categoria_id) REFERENCES public.categorias(id)
+);
+CREATE TABLE public.promociones (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  empresa_id uuid NOT NULL,
+  fecha_hora timestamp with time zone NOT NULL,
+  texto_promocion text NOT NULL,
+  numero_envios integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  imagen_url text,
+  CONSTRAINT promociones_pkey PRIMARY KEY (id),
+  CONSTRAINT promociones_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id)
+);

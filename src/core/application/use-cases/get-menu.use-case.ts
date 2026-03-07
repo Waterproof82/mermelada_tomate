@@ -1,6 +1,7 @@
 import { IProductRepository } from "@/core/domain/repositories/IProductRepository";
 import { ICategoryRepository } from "@/core/domain/repositories/ICategoryRepository";
 import { MenuCategoryVM } from "@/core/application/dtos/menu-view-model";
+import { Category } from "@/core/domain/entities/types";
 
 export class GetMenuUseCase {
   constructor(
@@ -16,15 +17,15 @@ export class GetMenuUseCase {
     ]);
 
     // 2. Filtrar categorías que no son complemento (excluir categoria_complemento_de)
-    const mainCategories = categories.filter((cat) => !cat.categoria_complemento_de);
+    const mainCategories = categories.filter((cat) => !cat.categoriaComplementoDe);
 
     // 3. Obtener categorías de complementos y crear mapa
-    const complementCategories = categories.filter((cat) => cat.categoria_complemento_de);
+    const complementCategories = categories.filter((cat) => cat.categoriaComplementoDe);
     const complementsByCategoryId = new Map<string, typeof products>();
     for (const compCat of complementCategories) {
-      const parentId = compCat.categoria_complemento_de!;
+      const parentId = compCat.categoriaComplementoDe!;
       // Products now use categoria_id (snake_case)
-      const compProducts = products.filter((p) => p.categoria_id === compCat.id && p.activo);
+      const compProducts = products.filter((p) => p.categoriaId === compCat.id && p.activo);
       if (!complementsByCategoryId.has(parentId)) {
         complementsByCategoryId.set(parentId, []);
       }
@@ -34,19 +35,23 @@ export class GetMenuUseCase {
     // 4. Obtener map de complemento_obligatorio por categoría padre
     const complementoObligatorioMap = new Map<string, boolean>();
     for (const compCat of complementCategories) {
-      if (compCat.categoria_complemento_de) {
-        complementoObligatorioMap.set(compCat.categoria_complemento_de, compCat.complemento_obligatorio);
+      if (compCat.categoriaComplementoDe) {
+        complementoObligatorioMap.set(compCat.categoriaComplementoDe, compCat.complementoObligatorio);
       }
     }
 
     // 5. Separar categorías principales de subcategorías (por categoria_padre_id)
-    const parentCategories = mainCategories.filter((cat) => !cat.categoria_padre_id);
-    const subCategories = mainCategories.filter((cat) => cat.categoria_padre_id);
+    const parentCategories = mainCategories.filter((cat) => !cat.categoriaPadreId);
+    const subCategories = mainCategories.filter((cat) => cat.categoriaPadreId);
 
-    // 6. Crear mapa de subcategorías por su categoría padre
-    const subcategoriesByParent = new Map<string, typeof subCategories>();
+    // 5.1 Ordenar categorías principales y subcategorías por campo 'orden'
+    parentCategories.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+    subCategories.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+
+    // 6. Crear mapa de subcategorías por su categoría padre (ya ordenadas)
+    const subcategoriesByParent = new Map<string, Category[]>();
     for (const subCat of subCategories) {
-      const parentId = subCat.categoria_padre_id!;
+      const parentId = subCat.categoriaPadreId!;
       if (!subcategoriesByParent.has(parentId)) {
         subcategoriesByParent.set(parentId, []);
       }
@@ -54,7 +59,7 @@ export class GetMenuUseCase {
     }
 
     // 7. Crear mapa de TODAS las categorías por ID para búsqueda rápida
-    const categoriesById = new Map<string, typeof categories>();
+    const categoriesById = new Map<string, Category>();
     for (const cat of categories) {
       categoriesById.set(cat.id, cat);
     }
@@ -66,12 +71,12 @@ export class GetMenuUseCase {
 
       // Productos de la categoría padre (si los hay, aunque normalmente estarán en subcategorías)
       // Products now use categoria_id (snake_case)
-      const parentProducts = products.filter((p) => p.categoria_id === parentCat.id && p.activo);
+      const parentProducts = products.filter((p) => p.categoriaId === parentCat.id && p.activo);
 
       // Productos de las subcategorías
       const subcategoryProducts = childSubcategories.flatMap((subCat) =>
         // Products now use categoria_id (snake_case)
-        products.filter((p) => p.categoria_id === subCat.id && p.activo)
+        products.filter((p) => p.categoriaId === subCat.id && p.activo)
       );
 
       // Combinar todos los productos
@@ -83,44 +88,44 @@ export class GetMenuUseCase {
 
       return {
         id: `category-${parentCat.id}`,
-        label: parentCat.nombre_es,
-        descripcion: parentCat.descripcion_es || undefined,
+        label: parentCat.nombre ?? 'Unnamed Category',
+        descripcion: parentCat.descripcion || undefined,
         translations: {
-          en: parentCat.nombre_en ? { name: parentCat.nombre_en, description: parentCat.descripcion_en || undefined } : undefined,
-          fr: parentCat.nombre_fr ? { name: parentCat.nombre_fr, description: parentCat.descripcion_fr || undefined } : undefined,
-          it: parentCat.nombre_it ? { name: parentCat.nombre_it, description: parentCat.descripcion_it || undefined } : undefined,
-          de: parentCat.nombre_de ? { name: parentCat.nombre_de, description: parentCat.descripcion_de || undefined } : undefined,
+          en: parentCat.translations?.en ? { name: parentCat.translations.en, description: parentCat.descripcionTranslations?.en || undefined } : undefined,
+          fr: parentCat.translations?.fr ? { name: parentCat.translations.fr, description: parentCat.descripcionTranslations?.fr || undefined } : undefined,
+          it: parentCat.translations?.it ? { name: parentCat.translations.it, description: parentCat.descripcionTranslations?.it || undefined } : undefined,
+          de: parentCat.translations?.de ? { name: parentCat.translations.de, description: parentCat.descripcionTranslations?.de || undefined } : undefined,
         },
         descripcionTranslations: {
-          en: parentCat.descripcion_en || undefined,
-          fr: parentCat.descripcion_fr || undefined,
-          it: parentCat.descripcion_it || undefined,
-          de: parentCat.descripcion_de || undefined,
+          en: parentCat.descripcionTranslations?.en || undefined,
+          fr: parentCat.descripcionTranslations?.fr || undefined,
+          it: parentCat.descripcionTranslations?.it || undefined,
+          de: parentCat.descripcionTranslations?.de || undefined,
         },
         subcategories: childSubcategories.length > 0 ? childSubcategories.map((subCat) => ({
           id: subCat.id,
-          nombre: subCat.nombre_es,
-          descripcion: subCat.descripcion_es || undefined,
+          nombre: subCat.nombre,
+          descripcion: subCat.descripcion || undefined,
           translations: {
-            en: subCat.nombre_en ? { name: subCat.nombre_en, description: subCat.descripcion_en || undefined } : undefined,
-            fr: subCat.nombre_fr ? { name: subCat.nombre_fr, description: subCat.descripcion_fr || undefined } : undefined,
-            it: subCat.nombre_it ? { name: subCat.nombre_it, description: subCat.descripcion_it || undefined } : undefined,
-            de: subCat.nombre_de ? { name: subCat.nombre_de, description: subCat.descripcion_de || undefined } : undefined,
+            en: subCat.translations?.en ? { name: subCat.translations.en, description: subCat.descripcionTranslations?.en || undefined } : undefined,
+            fr: subCat.translations?.fr ? { name: subCat.translations.fr, description: subCat.descripcionTranslations?.fr || undefined } : undefined,
+            it: subCat.translations?.it ? { name: subCat.translations.it, description: subCat.descripcionTranslations?.it || undefined } : undefined,
+            de: subCat.translations?.de ? { name: subCat.translations.de, description: subCat.descripcionTranslations?.de || undefined } : undefined,
           },
           descripcionTranslations: {
-            en: subCat.descripcion_en || undefined,
-            fr: subCat.descripcion_fr || undefined,
-            it: subCat.descripcion_it || undefined,
-            de: subCat.descripcion_de || undefined,
+            en: subCat.descripcionTranslations?.en || undefined,
+            fr: subCat.descripcionTranslations?.fr || undefined,
+            it: subCat.descripcionTranslations?.it || undefined,
+            de: subCat.descripcionTranslations?.de || undefined,
           },
-          products: products.filter((p) => p.categoria_id === subCat.id && p.activo).map((p) => ({
+          products: products.filter((p) => p.categoriaId === subCat.id && p.activo).map((p) => ({
             id: p.id,
             name: p.titulo_es,
             description: p.descripcion_es || undefined,
             price: p.precio,
-            category: (subCat.nombre_es || 'uncategorized').toLowerCase().replaceAll(" ", "-"),
-            image: p.foto_url || undefined,
-            highlight: p.es_especial,
+            category: (subCat.nombre || 'uncategorized').toLowerCase().replaceAll(" ", "-"),
+            image: p.fotoUrl || undefined,
+            highlight: p.esEspecial,
             translations: {
               en: p.titulo_en ? { name: p.titulo_en, description: p.descripcion_en || undefined } : undefined,
               fr: p.titulo_fr ? { name: p.titulo_fr, description: p.descripcion_fr || undefined } : undefined,
@@ -131,17 +136,17 @@ export class GetMenuUseCase {
         })) : undefined,
         items: allProducts.map((p) => {
           // Obtener la categoría correcta para este producto
-          const productCategory = categoriesById.get(p.categoria_id);
-          const categoryName = productCategory?.nombre_es || parentCat?.nombre_es || 'uncategorized';
+          const productCategory = p.categoriaId ? categoriesById.get(p.categoriaId) : undefined;
+          const categoryName: string = (productCategory?.nombre ?? parentCat?.nombre ?? 'uncategorized');
           
           return {
             id: p.id,
             name: p.titulo_es,
             description: p.descripcion_es || undefined,
             price: p.precio,
-            category: (categoryName || 'uncategorized').toLowerCase().replaceAll(" ", "-"),
-            image: p.foto_url || undefined,
-            highlight: p.es_especial,
+            category: (categoryName ?? 'uncategorized').toLowerCase().replaceAll(" ", "-"),
+            image: p.fotoUrl || undefined,
+            highlight: p.esEspecial,
             translations: {
               en: p.titulo_en ? { name: p.titulo_en, description: p.descripcion_en || undefined } : undefined,
               fr: p.titulo_fr ? { name: p.titulo_fr, description: p.descripcion_fr || undefined } : undefined,

@@ -63,7 +63,7 @@ export function CategoryNav(props: Readonly<CategoryNavProps>) {
       isManualScrolling.current = true
       setActiveId(id)
 
-      const offset = window.innerWidth >= 768 ? 140 : 140
+      const offset = 140
       const elementPosition = el.getBoundingClientRect().top + window.scrollY
       const offsetPosition = elementPosition - offset
 

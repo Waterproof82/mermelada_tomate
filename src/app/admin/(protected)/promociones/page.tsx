@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Mail, FileText, Send, CheckCircle, Image, Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import { Users, Mail, FileText, Send, CheckCircle, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/lib/admin-context';
 import { uploadImageAction } from '@/core/application/actions/storage.actions';
@@ -190,15 +191,17 @@ export default function PromocionesPage() {
 
           {/* Imagen de la promoción */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="promo-image" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Imagen de la promoción (opcional)
             </label>
             {previewImage ? (
               <div className="relative group rounded-lg overflow-hidden border h-48 mb-2">
-                <img
+                <Image
                   src={previewImage}
-                  alt="Preview"
-                  className="w-full h-full object-contain bg-gray-50"
+                  alt="Vista previa de la promoción"
+                  fill
+                  style={{objectFit:"contain"}}
+                  className="bg-gray-50"
                 />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <button
@@ -220,7 +223,7 @@ export default function PromocionesPage() {
                   id="promo-image"
                 />
                 <label htmlFor="promo-image" className="cursor-pointer">
-                  <Image className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                   <span className="text-sm text-gray-500">
                     Click para seleccionar una imagen
                   </span>
@@ -308,9 +311,11 @@ export default function PromocionesPage() {
               <div key={promo.id} className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
                 {promo.imagen_url && (
                   <div className="mb-3">
-                    <img 
+                    <Image 
                       src={promo.imagen_url} 
-                      alt="Promoción" 
+                      alt="Imagen de promoción" 
+                      width={128}
+                      height={128}
                       className="max-h-32 rounded-lg object-contain bg-white"
                     />
                   </div>

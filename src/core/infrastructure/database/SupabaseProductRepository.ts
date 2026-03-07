@@ -29,6 +29,29 @@ export class SupabaseProductRepository implements IProductRepository {
     };
   }
 
+  // Map to admin UI format (snake_case with all translation fields)
+  private mapToAdminFormat(row: any) {
+    return {
+      id: row.id,
+      empresa_id: row.empresa_id,
+      categoria_id: row.categoria_id,
+      titulo_es: row.titulo_es,
+      titulo_en: row.titulo_en || null,
+      titulo_fr: row.titulo_fr || null,
+      titulo_it: row.titulo_it || null,
+      titulo_de: row.titulo_de || null,
+      descripcion_es: row.descripcion_es || null,
+      descripcion_en: row.descripcion_en || null,
+      descripcion_fr: row.descripcion_fr || null,
+      descripcion_it: row.descripcion_it || null,
+      descripcion_de: row.descripcion_de || null,
+      precio: Number.parseFloat(row.precio) || 0,
+      foto_url: row.foto_url || null,
+      es_especial: row.es_especial ?? false,
+      activo: row.activo ?? true,
+    };
+  }
+
   // Map to database column format (for admin UI compatibility)
   private mapToDatabaseFormat(row: any) {
     return {
@@ -101,29 +124,34 @@ export class SupabaseProductRepository implements IProductRepository {
 
     if (error) throw new Error(`DB Error: ${error.message}`);
 
-    // Return database format for admin UI compatibility
-    return data.map((row) => this.mapToDatabaseFormat(row));
+    // Return domain format (camelCase)
+    return data.map((row: any) => this.mapToDomain(row));
+  }
+
+  private mapUpdateProductPayload(data: Partial<UpdateProductDTO>): any {
+    const updatePayload: any = {};
+    const fieldsToMap = [
+      'categoria_id', 'titulo_es', 'titulo_en', 'titulo_fr', 'titulo_it', 'titulo_de',
+      'descripcion_es', 'descripcion_en', 'descripcion_fr', 'descripcion_it', 'descripcion_de',
+      'precio', 'es_especial', 'activo'
+    ];
+
+    for (const field of fieldsToMap) {
+      if (data[field as keyof UpdateProductDTO] !== undefined) {
+        updatePayload[field] = data[field as keyof UpdateProductDTO];
+      }
+    }
+
+    // Special handling for foto_url as it can be an empty string
+    if (data.foto_url !== undefined) {
+      updatePayload.foto_url = data.foto_url === "" ? null : data.foto_url;
+    }
+
+    return updatePayload;
   }
 
   async update(id: string, empresaId: string, data: Partial<UpdateProductDTO>): Promise<Product> {
-    const updatePayload: any = {};
-    
-    // Map DTO fields to DB columns
-    if (data.categoria_id !== undefined) updatePayload.categoria_id = data.categoria_id;
-    if (data.titulo_es !== undefined) updatePayload.titulo_es = data.titulo_es;
-    if (data.titulo_en !== undefined) updatePayload.titulo_en = data.titulo_en;
-    if (data.titulo_fr !== undefined) updatePayload.titulo_fr = data.titulo_fr;
-    if (data.titulo_it !== undefined) updatePayload.titulo_it = data.titulo_it;
-    if (data.titulo_de !== undefined) updatePayload.titulo_de = data.titulo_de;
-    if (data.descripcion_es !== undefined) updatePayload.descripcion_es = data.descripcion_es;
-    if (data.descripcion_en !== undefined) updatePayload.descripcion_en = data.descripcion_en;
-    if (data.descripcion_fr !== undefined) updatePayload.descripcion_fr = data.descripcion_fr;
-    if (data.descripcion_it !== undefined) updatePayload.descripcion_it = data.descripcion_it;
-    if (data.descripcion_de !== undefined) updatePayload.descripcion_de = data.descripcion_de;
-    if (data.precio !== undefined) updatePayload.precio = data.precio;
-    if (data.foto_url !== undefined) updatePayload.foto_url = data.foto_url === "" ? null : data.foto_url;
-    if (data.es_especial !== undefined) updatePayload.es_especial = data.es_especial;
-    if (data.activo !== undefined) updatePayload.activo = data.activo;
+    const updatePayload = this.mapUpdateProductPayload(data);
 
     const { data: updated, error } = await this.supabase
       .from("productos")

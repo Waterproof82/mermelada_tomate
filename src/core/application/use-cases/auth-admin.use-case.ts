@@ -17,20 +17,31 @@ export class AuthAdminUseCase {
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    console.log('[AuthAdminUseCase] Intentando login para:', email);
+
     // 1. Verificar credenciales con Supabase Auth
     const { error, data: authData } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error || !authData?.user) {
+    if (error) {
+      console.error('[AuthAdminUseCase] Error de auth:', error.message);
+      throw new Error("Credenciales inválidas");
+    }
+
+    if (!authData?.user) {
+      console.error('[AuthAdminUseCase] No se recibió user data');
       throw new Error("Credenciales inválidas");
     }
 
     const userId = authData.user.id;
+    console.log('[AuthAdminUseCase] User ID:', userId);
 
     // 2. Buscar perfil admin
     const admin = await adminRepository.findById(userId);
+    console.log('[AuthAdminUseCase] Admin encontrado:', admin);
+
     if (!admin) {
       throw new Error("Usuario no autorizado como admin");
     }
