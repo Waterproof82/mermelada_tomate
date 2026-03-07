@@ -1,6 +1,6 @@
-import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NodeHttpHandler } from "@smithy/node-http-handler";
-import https from "https";
+import https from "node:https";
 
 // En desarrollo, el antivirus puede interceptar HTTPS y causar errores SSL.
 // NODE_TLS_REJECT_UNAUTHORIZED=0 desactiva la verificación globalmente en dev.
@@ -52,6 +52,41 @@ export function getR2Config() {
     bucketName: R2_BUCKET_NAME,
     publicDomain: R2_PUBLIC_DOMAIN,
   };
+}
+
+export async function uploadToR2(
+  key: string,
+  buffer: Buffer,
+  contentType: string,
+): Promise<void> {
+  const accountId = process.env.R2_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+
+  if (apiToken && accountId && R2_BUCKET_NAME) {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets/${R2_BUCKET_NAME}/objects/${key}`;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': contentType },
+      body: new Uint8Array(buffer),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => res.statusText);
+      throw new Error(`Cloudflare API error ${res.status}: ${text}`);
+    }
+    return;
+  }
+
+  // Fallback: AWS SDK S3-compatible
+  const client = getS3Client();
+  await client.send(
+    new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME!,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+      ContentLength: buffer.byteLength,
+    })
+  );
 }
 
 export async function deleteImageFromR2(imageUrl: string): Promise<boolean> {

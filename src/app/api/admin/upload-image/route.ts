@@ -1,48 +1,29 @@
 import { NextRequest } from 'next/server';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, successResponse, errorResponse } from '@/core/infrastructure/api/helpers';
-import { getS3Client, getR2Config } from '@/core/infrastructure/storage/s3-client';
+import { getR2Config, uploadToR2 } from '@/core/infrastructure/storage/s3-client';
 import { empresaUseCase } from '@/core/infrastructure/database';
 
-const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
-
-async function uploadViaCloudflareAPI(
-  accountId: string,
-  bucket: string,
-  key: string,
-  buffer: Buffer,
-  contentType: string,
-): Promise<void> {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets/${bucket}/objects/${key}`;
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-      'Content-Type': contentType,
-    },
-    body: buffer,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new Error(`Cloudflare API error ${res.status}: ${text}`);
-  }
-}
-
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: NextRequest) {
   const { empresaId, error: authError } = await requireAuth(request);
-  if (authError) return authError;
+  if (authError || !empresaId) return authError ?? errorResponse('No autorizado', 401);
 
-  const { bucketName, publicDomain } = getR2Config();
-  if (!bucketName || !publicDomain) {
-    return errorResponse('Configuración de R2 incompleta');
+  const { publicDomain } = getR2Config();
+  if (!publicDomain) {
+    return errorResponse('Configuración de almacenamiento incompleta');
   }
 
-  // Derivar el slug desde la DB (no confiar en el cliente)
-  const empresa = await empresaUseCase.getById(empresaId!);
+  // Derivar el slug desde la DB — nunca del cliente (OWASP: confianza en datos de servidor)
+  const empresa = await empresaUseCase.getById(empresaId);
   const empresaSlug = empresa?.slug ?? empresa?.dominio ?? empresaId!;
 
   let formData: FormData;
@@ -53,7 +34,6 @@ export async function POST(request: NextRequest) {
   }
 
   const file = formData.get('file') as File | null;
-
   if (!file || !(file instanceof File)) {
     return errorResponse('No se recibió ningún archivo', 400);
   }
@@ -72,32 +52,19 @@ export async function POST(request: NextRequest) {
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const key = `${empresaSlug}/${year}/${month}/${uuid}-${file.name}`;
 
-    const { R2_ACCOUNT_ID } = process.env;
+    // OWASP: nunca usar file.name del cliente en el path (path traversal).
+    // Usamos solo la extensión derivada del MIME type validado.
+    const ext = MIME_TO_EXT[file.type] ?? 'bin';
+    const key = `${empresaSlug}/${year}/${month}/${uuid}.${ext}`;
 
-    if (CLOUDFLARE_API_TOKEN && R2_ACCOUNT_ID) {
-      // Usar Cloudflare REST API (no requiere r2.cloudflarestorage.com)
-      await uploadViaCloudflareAPI(R2_ACCOUNT_ID, bucketName, key, buffer, file.type);
-    } else {
-      // Fallback: AWS SDK S3-compatible
-      const client = getS3Client();
-      await client.send(
-        new PutObjectCommand({
-          Bucket: bucketName,
-          Key: key,
-          Body: buffer,
-          ContentType: file.type,
-          ContentLength: buffer.byteLength,
-        })
-      );
-    }
+    await uploadToR2(key, buffer, file.type);
 
     const publicUrl = `${publicDomain}/${key}`;
     return successResponse({ publicUrl });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('[upload-image] Error uploading to R2:', msg);
-    return errorResponse(`Error al subir la imagen: ${msg}`);
+    // OWASP: log interno con detalle, mensaje genérico al cliente
+    console.error('[upload-image] Error:', error instanceof Error ? error.message : error);
+    return errorResponse('Error al procesar la imagen', 500);
   }
 }
