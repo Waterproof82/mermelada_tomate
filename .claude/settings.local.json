@@ -32,7 +32,8 @@
       "Bash(done)",
       "Bash(xargs cat:*)",
       "Bash(pnpm remove:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(cat:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
