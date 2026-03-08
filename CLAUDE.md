@@ -5,7 +5,7 @@
 When writing code that uses any external library, always use context7 to get current documentation before generating code.
 
 ## Stack
-Next.js 16 + React 19 + TypeScript + Supabase + Tailwind CSS v4 + Cloudflare R2
+Next.js 16 + React 19 + TypeScript + Supabase + Tailwind CSS v4 + Cloudflare R2 + Upstash Redis (rate limiting)
 
 **Nota:** Next.js 16 usa Turbopack por defecto en desarrollo.
 
@@ -20,7 +20,7 @@ API Routes → Use Cases → Repositories → Supabase/R2
 | Capa | Ubicación | Responsabilidad |
 |------|-----------|-----------------|
 | **Domain** | `core/domain/` | Entidades, interfaces de repositorios |
-| **Application** | `core/application/` | DTOs (Zod), Use Cases |
+| **Application** | `core/application/` | DTOs (Zod), Use Cases, Mappers |
 | **Infrastructure** | `core/infrastructure/` | Implementaciones de repositories |
 
 ### Flujo obligatorio
@@ -92,9 +92,12 @@ src/
 │   │   │                       #              cliente.dto.ts, empresa.dto.ts, auth.dto.ts
 │   │   ├── actions/
 │   │   │   └── storage.actions.ts  # Server Action: uploadImageAction
-│   │   └── use-cases/          # Lógica de negocio
+│   │   ├── use-cases/          # Lógica de negocio
+│   │   └── mappers/            # Transformación dominio → view model (MenuMapper)
 │   └── infrastructure/
-│       ├── api/helpers.ts       # requireAuth, successResponse, errorResponse, validationErrorResponse
+│       ├── api/
+│       │   ├── helpers.ts       # requireAuth, successResponse, errorResponse, validationErrorResponse
+│       │   └── rate-limit.ts    # rateLimitLogin, rateLimitPublic (Upstash Redis)
 │       ├── database/
 │       │   ├── supabase-client.ts  # DOS singletons: getSupabaseClient() y getSupabaseAnonClient()
 │       │   └── index.ts            # Instanciación e inyección de dependencias (exporta use cases y repos)
@@ -359,6 +362,14 @@ if (!admin) redirect('/admin/login');
 - **Fix SSL en desarrollo**: antivirus intercepta HTTPS de Node.js → `rejectUnauthorized: false` vía `@smithy/node-http-handler` (solo en `NODE_ENV !== "production"`)
 - **Fix checksums R2**: AWS SDK v3 añade CRC32 por defecto; R2 no los soporta → `requestChecksumCalculation: "WHEN_REQUIRED"` y `responseChecksumValidation: "WHEN_REQUIRED"` en el S3Client
 - **R2 CORS**: solo necesario para uploads directos desde el browser (no aplica al flujo actual server-side)
+
+### Rate Limiting (Upstash Redis)
+- **Archivo**: `core/infrastructure/api/rate-limit.ts`
+- **Login**: 5 intentos / 15 min por IP (`rateLimitLogin`)
+- **Rutas públicas**: 20 requests / min por IP (`rateLimitPublic`)
+- **Env vars**: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
+- **Graceful degradation**: Si no hay Redis configurado, no limita (desarrollo local sin Redis funciona)
+- **Rutas protegidas**: `/api/admin/login`, `/api/pedidos`, `/api/unsubscribe`, `/api/admin/promociones/unsubscribe`
 
 ### Validation
 - **TODAS** las rutas API usan Zod schemas con `safeParse`

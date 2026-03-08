@@ -21,6 +21,8 @@
     "@sendinblue/client": "^3.3.1",
     "@smithy/node-http-handler": "^4.4.14",
     "@supabase/supabase-js": "^2.95.3",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.3",
     "autoprefixer": "^10.4.20",
     "brevo": "^1.0.0",
     "class-variance-authority": "^0.7.1",

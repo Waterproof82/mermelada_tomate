@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { clienteUseCase } from '@/core/infrastructure/database';
+import { rateLimitPublic } from '@/core/infrastructure/api/rate-limit';
 
 const emailSchema = z.string().email();
 const uuidSchema = z.string().uuid();
@@ -13,6 +14,9 @@ function getBaseUrl(): string {
 
 export async function GET(request: Request) {
   try {
+    const rateLimited = await rateLimitPublic(request);
+    if (rateLimited) return rateLimited;
+
     const baseUrl = getBaseUrl();
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
