@@ -6,18 +6,18 @@ import { rateLimitPublic } from '@/core/infrastructure/api/rate-limit';
 const emailSchema = z.string().email();
 const uuidSchema = z.string().uuid();
 
-function getBaseUrl(): string {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!baseUrl) throw new Error('NEXT_PUBLIC_BASE_URL no está configurado');
-  return baseUrl;
+function getBaseUrl(request: Request): string {
+  const url = new URL(request.url);
+  return `${url.protocol}//${url.host}`;
 }
 
 export async function GET(request: Request) {
+  const baseUrl = getBaseUrl(request);
+
   try {
     const rateLimited = await rateLimitPublic(request);
     if (rateLimited) return rateLimited;
 
-    const baseUrl = getBaseUrl();
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
     const empresaId = searchParams.get('empresa');
@@ -37,7 +37,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${baseUrl}/?${mensaje}`);
   } catch (error) {
     console.error('[Unsubscribe] Error:', error);
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
     return NextResponse.redirect(`${baseUrl}/?error=internal`);
   }
 }
