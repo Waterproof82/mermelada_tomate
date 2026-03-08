@@ -1,5 +1,7 @@
 # AGENTS.md - Contexto para Agentes IA
 
+> Ver estructura del proyecto en: `docs/context/structure.txt`
+
 ## Regla de documentación externa
 
 When writing code that uses any external library, always use context7 to get current documentation before generating code.
