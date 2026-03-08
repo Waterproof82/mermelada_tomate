@@ -101,8 +101,6 @@ src/
 │   │   ├── dtos/                    # Schemas Zod: product.dto.ts,
 │   │   │                            #   category.dto.ts, cliente.dto.ts,
 │   │   │                            #   empresa.dto.ts, auth.dto.ts
-│   │   ├── actions/
-│   │   │   └── storage.actions.ts   # Server Action: uploadImageAction
 │   │   └── use-cases/               # product, category, cliente, empresa,
 │   │                                #   pedido, promocion, auth-admin, get-menu
 │   └── infrastructure/
@@ -120,7 +118,7 @@ src/
 │       └── storage/
 │           ├── s3-client.ts         # Singleton R2: getS3Client(),
 │           │                        #   getR2Config(), deleteImageFromR2()
-│           └── actions.ts           # Server Action: getPresignedUploadUrlAction
+│           │                        #   uploadToR2() (via Cloudflare API o AWS SDK)
 │
 ├── components/                      # Componentes React
 │   └── ui/                          # ImageUploader, Button, Dialog, etc.
@@ -145,7 +143,7 @@ src/
 | Capa | Contenido |
 |------|-----------|
 | **Domain** | `entities/types.ts`, `repositories/I*.ts` |
-| **Application** | `dtos/*.ts`, `use-cases/*.ts`, `actions/storage.actions.ts` |
+| **Application** | `dtos/*.ts`, `use-cases/*.ts` |
 | **Infrastructure** | `database/*.ts`, `storage/*.ts`, `api/helpers.ts` |
 
 Reglas estrictas:
@@ -361,17 +359,18 @@ La empresa se resuelve por dominio principal. `parseMainDomain()` de `lib/domain
 
 ### Flujo de upload
 1. Cliente selecciona imagen
-2. Optimización en browser (480×480, WebP, 80%)
-3. `uploadImageAction()` (Server Action de aplicación) → `getPresignedUploadUrlAction()` (infraestructura)
-4. URL prefirmada R2 (60 seg)
-5. Upload directo del browser a R2
-6. URL pública guardada en BBDD
+2. Optimización en browser (480×480, WebP, 80%) en `components/ui/image-uploader.tsx`
+3. POST a `/api/admin/upload-image` con `FormData`
+4. El API route deriva `empresaSlug` desde la DB — nunca del cliente
+5. Upload a R2 via Cloudflare API (si `CLOUDFLARE_API_TOKEN` configurado) o AWS SDK fallback
+6. Devuelve `{ publicUrl }`
 
 ### Funciones disponibles
 ```typescript
-import { getS3Client, getR2Config, deleteImageFromR2 } from '@/core/infrastructure/storage/s3-client';
+import { getS3Client, getR2Config, deleteImageFromR2, uploadToR2 } from '@/core/infrastructure/storage/s3-client';
 
 deleteImageFromR2(publicUrl); // elimina imagen por URL pública
+await uploadToR2(key, buffer, contentType); // upload directo (usado por /api/admin/upload-image)
 ```
 
 ### Configurar CORS (solo una vez)
@@ -452,7 +451,7 @@ npx tsx scripts/setup-r2-cors.ts     # Configurar CORS en R2
 
 ### Deuda Técnica
 
-- `src/lib/server-services.ts` → `getEmpresaByDomain` consulta Supabase directamente con anon key para cargar los datos públicos completos de la empresa (colores, footer, textos). Pendiente migrar a `IEmpresaRepository.findByDomainPublic()` con el tipo `EmpresaInfo` completo.
+- Ninguna. El proyecto está completo y estable.
 
 ---
 
