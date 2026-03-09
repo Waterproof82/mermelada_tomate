@@ -34,7 +34,8 @@
       "Bash(pnpm remove:*)",
       "Bash(npx next:*)",
       "Bash(cat:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(npx tsc:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
