@@ -35,7 +35,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: empresa?.nombre || "Mermelada de Tomate",
     description: empresa?.descripcion?.es?.substring(0, 160) || "Carta digital y pedidos",
-    manifest: '/manifest.json',
     icons: isDefaultFavicon
       ? { icon: [{ url: '/favicon.ico', type: 'image/x-icon' }] }
       : {

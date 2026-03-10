@@ -448,9 +448,7 @@ if (!admin) redirect('/admin/login');
   - Chrome/Firefox/Edge: icon 32x32, 16x16
   - Safari: apple-touch-icon 180x180
   - Android Chrome: android-chrome 192x192, 512x512
-  - PWA: manifest.json dinámico en `/manifest.json`
 - **Fallback**: Si no hay logo, usa `/favicon.ico`
-- **PWA**: El manifest usa `theme_color` y `background_color` desde los colores de la empresa
 
 
 ## Comandos
