@@ -105,16 +105,20 @@ src/
 │   │                                #   pedido, promocion, auth-admin, get-menu
 │   └── infrastructure/
 │       ├── api/helpers.ts           # requireAuth, successResponse,
-│       │                            #   errorResponse, validationErrorResponse
+│       │                            #   errorResponse, validationErrorResponse,
+│       │                            #   handleResult
 │       ├── database/
 │       │   ├── supabase-client.ts   # DOS singletons (service role + anon)
-│       │   ├── index.ts             # Inyección de dependencias — exporta
+│       │   ├── index.ts           # Inyección de dependencias — exporta
 │       │   │                        #   todos los use cases y repositories
 │       │   ├── SupabaseProductRepository.ts
 │       │   ├── SupabaseCategoryRepository.ts
 │       │   ├── SupabaseAdminRepository.ts
 │       │   ├── SupabaseClienteEmpresaRepository.ts
-│       │   └── SupabasePromocionPedidoRepository.ts
+│       │   ├── SupabasePromocionPedidoRepository.ts
+│       │   └── SupabaseLogErrorRepository.ts
+│       ├── logging/
+│       │   └── logger.ts           # ErrorLogger singleton para logging
 │       └── storage/
 │           ├── s3-client.ts         # Singleton R2: getS3Client(),
 │           │                        #   getR2Config(), deleteImageFromR2()
@@ -249,6 +253,7 @@ import {
 | **IPromocionRepository** | `findAllByTenant`, `create`, `deleteAllByTenant` |
 | **IProductRepository** | `findAllByTenant`, `create`, `update`, `delete` |
 | **ICategoryRepository** | `findAllByTenant`, `create`, `update`, `delete` |
+| **ILogErrorRepository** | `log` |
 
 ---
 
@@ -448,10 +453,13 @@ npx tsx scripts/setup-r2-cors.ts     # Configurar CORS en R2
 | **OWASP** | ✅ 100% — JWT HttpOnly, Zod safeParse, escapeHtml, hex validation |
 | **Tipos TypeScript** | ✅ Sin `any` en core ni API routes |
 | **Código duplicado** | ✅ `parseMainDomain`/`getDomainFromHeaders` centralizados en `lib/domain-utils.ts` |
+| **Error Handling (Result\<T\>)** | ✅ 100% — Todos los módulos migrados al patrón Result<T, E> |
+| **Logging Centralizado** | ✅ 100% — Tabla log_errors + ErrorLogger singleton |
 
 ### Deuda Técnica
 
 - Ninguna. El proyecto está completo y estable.
+- Sistema de error handling 100% implementado con Result<T, E> pattern
 
 ---
 

@@ -40,7 +40,12 @@ export default async function Home() {
   let menuData: MenuCategoryVM[] = [];
 
   try {
-    menuData = await getMenuUseCase.execute(empresaId!);
+    const menuResult = await getMenuUseCase.execute(empresaId!);
+    if (menuResult.data) {
+      menuData = menuResult.data;
+    } else if (menuResult.error) {
+      console.error("Error fetching menu from Supabase:", menuResult.error);
+    }
   } catch (error) {
     console.error("Error fetching menu from Supabase:", error);
   }
