@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { sendEmail } from '@/lib/brevo-email';
 import { deleteImageFromR2 } from '@/core/infrastructure/storage/s3-client';
 import { promocionUseCase, empresaUseCase } from '@/core/infrastructure/database';
-import { requireAuth, errorResponse } from '@/core/infrastructure/api/helpers';
+import { requireAuth, errorResponse, handleResult } from '@/core/infrastructure/api/helpers';
 import { escapeHtml } from '@/lib/html-utils';
 
 const createPromocionSchema = z.object({
@@ -52,12 +52,11 @@ export async function GET(request: NextRequest) {
   const { empresaId, error: authError } = await requireAuth(request);
   if (authError) return authError;
 
-  try {
-    const promociones = await promocionUseCase.getAll(empresaId!);
-    return NextResponse.json({ promociones });
-  } catch {
-    return errorResponse('Error interno');
+  const result = await promocionUseCase.getAll(empresaId!);
+  if (!result.success) {
+    return handleResult(result);
   }
+  return NextResponse.json({ promociones: result.data });
 }
 
 export async function POST(request: NextRequest) {
