@@ -65,7 +65,11 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    const empresa = await empresaUseCase.getById(empresaId!);
+    const empresaResult = await empresaUseCase.getById(empresaId!);
+    if (!empresaResult.success) {
+      return NextResponse.json({ error: empresaResult.error.message }, { status: 500 });
+    }
+    const empresa = empresaResult.data;
 
     const body = await request.json();
     const parsed = createPromocionSchema.safeParse(body);
@@ -75,11 +79,17 @@ export async function POST(request: NextRequest) {
 
     const { texto_promocion, imagen_url } = parsed.data;
 
-    const { promo, oldImageUrl, emailTargets } = await promocionUseCase.create(
+    const createResult = await promocionUseCase.create(
       empresaId!,
       texto_promocion,
       imagen_url,
     );
+
+    if (!createResult.success) {
+      return NextResponse.json({ error: createResult.error.message }, { status: 500 });
+    }
+
+    const { promo, oldImageUrl, emailTargets } = createResult.data;
 
     if (oldImageUrl) {
       await deleteImageFromR2(oldImageUrl);

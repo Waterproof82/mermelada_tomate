@@ -18,7 +18,12 @@ export const getMenuUseCase = new GetMenuUseCase(productRepo, categoryRepo);
 
 const getEmpresaByDomainRaw = async (domain: string): Promise<EmpresaPublic | null> => {
   const mainDomain = parseMainDomain(domain);
-  return empresaPublicRepository.findByDomainPublic(mainDomain);
+  const result = await empresaPublicRepository.findByDomainPublic(mainDomain);
+  if (!result.success) {
+    console.error('[getEmpresaByDomain] Error:', result.error.message);
+    return null;
+  }
+  return result.data;
 };
 
 export const getEmpresaByDomain = unstable_cache(

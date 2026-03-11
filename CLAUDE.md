@@ -21,9 +21,9 @@ API Routes → Use Cases → Repositories → Supabase/R2
 
 | Capa | Ubicación | Responsabilidad |
 |------|-----------|-----------------|
-| **Domain** | `core/domain/` | Entidades, interfaces de repositorios |
+| **Domain** | `core/domain/` | Entidades, interfaces de repositorios, tipos de error |
 | **Application** | `core/application/` | DTOs (Zod), Use Cases, Mappers |
-| **Infrastructure** | `core/infrastructure/` | Implementaciones de repositories |
+| **Infrastructure** | `core/infrastructure/` | Implementaciones de repositories, logging, API helpers |
 
 ### Flujo obligatorio
 
@@ -51,6 +51,91 @@ export async function POST(request: NextRequest) {
 ```
 
 ## Principios a Seguir (OBLIGATORIOS)
+
+### Sistema de Errores - Result<T, E> Pattern
+
+El proyecto implementa un sistema centralizado de errores usando el patrón `Result<T, E>`:
+
+```typescript
+// core/domain/entities/types.ts
+
+// Tipo Result discriminated union
+export type Result<T, E = AppError> =
+  | { success: true; data: T }
+  | { success: false; error: E };
+
+// Estructura de error estructurado
+export interface AppError {
+  code: string;           // Código del error: DB_ERROR, VALIDATION_ERROR, etc.
+  message: string;       // Mensaje legible para humanos
+  details?: Record<string, unknown>; // Datos adicionales del error
+  module: ErrorModule;   // repository | use-case | api | middleware
+  method?: string;       // Nombre del método donde ocurrió el error
+  severity?: ErrorSeverity; // error | warning | critical
+}
+
+export type ErrorModule = 'repository' | 'use-case' | 'api' | 'middleware';
+export type ErrorSeverity = 'error' | 'warning' | 'critical';
+```
+
+### Flujo de errores (OBLIGATORIO SEGUIR)
+
+```typescript
+// 1. Repository retorna Result<T>
+async findAllByTenant(empresaId: string): Promise<Result<Product[]>> {
+  try {
+    const { data, error } = await supabase.from('productos').select('*').eq('empresa_id', empresaId);
+    
+    if (error) {
+      // Loguear el error automáticamente
+      await logger.logAndReturnError(
+        'DB_SELECT_ERROR',
+        error.message,
+        'repository',
+        'ProductRepository.findAllByTenant',
+        { empresaId, details: { code: error.code } }
+      );
+      return { success: false, error: { code: 'DB_ERROR', message: 'Error al obtener productos', module: 'repository', method: 'findAllByTenant' } };
+    }
+    
+    return { success: true, data: mappedProducts };
+  } catch (e) {
+    const appError = await logger.logFromCatch(e, 'repository', 'ProductRepository.findAllByTenant', { empresaId });
+    return { success: false, error: appError };
+  }
+}
+
+// 2. Use Case propagate el Result
+async getAll(empresaId: string): Promise<Result<Product[]>> {
+  const result = await this.productRepo.findAllByTenant(empresaId);
+  if (!result.success) {
+    return { success: false, error: { ...result.error, method: 'ProductUseCase.getAll' } };
+  }
+  return { success: true, data: result.data };
+}
+
+// 3. API Route usa handleResult()
+export async function GET(request: NextRequest) {
+  const { empresaId, error: authError } = await requireAuth(request);
+  if (authError) return authError;
+
+  const result = await productUseCase.getAll(empresaId!);
+  return handleResult(result); // Auto retorna success o error
+}
+```
+
+### Logger Centralizado
+
+```typescript
+// core/infrastructure/logging/logger.ts
+
+import { logger } from '@/core/infrastructure/logging/logger';
+
+// Métodos disponibles:
+await logger.logError(data);              // Logging básico
+await logger.logAndReturnError(code, msg, module, method, options); // Crea y loguea error
+await logger.logFromCatch(error, module, method, options); // Convenience para catch blocks
+```
 
 ### Clean Architecture
 - **NUNCA** acceder a la DB directamente desde API routes ni pages
@@ -91,7 +176,7 @@ src/
 │   │   └── repositories/       # Interfaces: IProductRepository, IAdminRepository,
 │   │                           #             IClienteRepository, IEmpresaRepository,
 │   │                           #             IPedidoRepository, IPromocionRepository,
-│   │                           #             ICategoryRepository
+│   │                           #             ICategoryRepository, ILogErrorRepository
 │   ├── application/
 │   │   ├── dtos/               # Zod schemas: product.dto.ts, category.dto.ts,
 │   │   │                       #              cliente.dto.ts, empresa.dto.ts, auth.dto.ts
@@ -99,11 +184,13 @@ src/
 │   │   └── mappers/            # Transformación dominio → view model (MenuMapper)
 │   └── infrastructure/
 │       ├── api/
-│       │   ├── helpers.ts       # requireAuth, successResponse, errorResponse, validationErrorResponse
+│       │   ├── helpers.ts       # requireAuth, successResponse, errorResponse, validationErrorResponse, handleResult
 │       │   └── rate-limit.ts    # rateLimitLogin, rateLimitPublic (Upstash Redis)
 │       ├── database/
 │       │   ├── supabase-client.ts  # DOS singletons: getSupabaseClient() y getSupabaseAnonClient()
 │       │   └── index.ts            # Instanciación e inyección de dependencias (exporta use cases y repos)
+│       ├── logging/
+│       │   └── logger.ts         # ErrorLogger singleton para logging centralizado
 │       └── storage/
 │           └── s3-client.ts        # Singleton R2: getS3Client(), getR2Config(), deleteImageFromR2()
 ├── components/
@@ -131,7 +218,11 @@ return successResponse(data);           // 200 OK
 return successResponse(data, 201);      // 201 Created
 return errorResponse('msg');            // 500 Error
 return errorResponse('msg', 404);       // 404 Not Found
-return validationErrorResponse('msg'); // 400 Bad Request
+return validationErrorResponse('msg');   // 400 Bad Request
+
+// Result handling (OBLIGATORIO para APIs que usan Use Cases con Result)
+return handleResult(result);              // Auto retorna success (200) o error (500)
+return handleResultWithStatus(result, 201); // Con status code personalizado
 ```
 
 ## Helper de dominio (OBLIGATORIO para parsear hosts)
@@ -214,6 +305,76 @@ Los DTOs de Zod (Application layer) son estructuralmente compatibles con estos t
 | **IPromocionRepository** | `findAllByTenant`, `create`, `deleteAllByTenant` |
 | **ICategoryRepository** | `findAllByTenant`, `create`, `update`, `delete` |
 | **IProductRepository** | `findAllByTenant`, `create`, `update`, `delete` |
+| **ILogErrorRepository** | `log` |
+
+## Sistema de Errores - Implementación Completa
+
+### Módulos Migrados a Result\<T\>
+
+**100% COMPLETE** — Todos los módulos del codebase utilizan el patrón Result<T, E>:
+
+| Módulo | Repository | Use Case | API Route |
+|--------|-----------|----------|-----------|
+| Products | ✅ IProductRepository | ✅ ProductUseCase | ✅ /api/admin/productos |
+| Categories | ✅ ICategoryRepository | ✅ CategoryUseCase | ✅ /api/admin/categorias |
+| Clients | ✅ IClienteRepository | ✅ ClienteUseCase | ✅ /api/admin/clientes |
+| Empresa | ✅ IEmpresaRepository | ✅ EmpresaUseCase | ✅ /api/admin/empresa, /api/admin/update-colores |
+| Pedidos | ✅ IPedidoRepository | ✅ PedidoUseCase | ✅ /api/pedidos, /api/admin/pedidos/enviar-email |
+| Promociones | ✅ IPromocionRepository | ✅ PromocionUseCase | ✅ /api/admin/promociones |
+| **Admin/Auth** | ✅ IAdminRepository | ✅ AuthAdminUseCase | ✅ /api/admin/login |
+
+### AuthAdminUseCase - Result Pattern
+
+El módulo de autenticación también fue migrado:
+
+```typescript
+// Repository retorna Result<T>
+async loginWithPassword(email: string, password: string): Promise<Result<string>> {
+  const result = await this.supabaseAnon.auth.signInWithPassword({ email, password });
+  if (result.error) {
+    await logger.logAndReturnError('AUTH_LOGIN_ERROR', ...);
+    return { success: false, error: { code: 'AUTH_LOGIN_ERROR', message: 'Credenciales inválidas', ... } };
+  }
+  return { success: true, data: result.data.user.id };
+}
+
+// Use Case propaga el Result
+async login(data: LoginDTO): Promise<Result<LoginResult>> {
+  const loginResult = await this.adminRepo.loginWithPassword(email, password);
+  if (!loginResult.success) return { success: false, error: { ...loginResult.error } };
+  // ...
+}
+
+// API Route usa handleResult con status code personalizado
+if (!result.success) {
+  if (result.error.code === 'AUTH_LOGIN_ERROR') {
+    return handleResult(result, 401); // Auth errors → 401
+  }
+  return handleResult(result);
+}
+```
+
+### Logger - Métodos Completos
+
+```typescript
+import { logger } from '@/core/infrastructure/logging/logger';
+
+// Logging básico
+await logger.logError({ code: 'ERROR_CODE', message: 'msg', module: 'repository' });
+
+// Crea error y lo loguea - conveniente para errores conocidos
+await logger.logAndReturnError(
+  'DB_SELECT_ERROR',        // código
+  error.message,            // mensaje
+  'repository',             // módulo
+  'MethodName',             // método
+  { empresaId, details: {} } // metadata opcional
+);
+
+// Convenience para catch blocks - captura stack trace automáticamente
+const appError = await logger.logFromCatch(error, 'repository', 'MethodName', { empresaId });
+return { success: false, error: appError };
+```
 
 ### Entidades del Dominio (domain/entities/types.ts)
 
@@ -240,6 +401,26 @@ interface CartItem {
   quantity: number;
   selectedComplements?: { name: string; price: number }[];
 }
+
+// ============================================
+// ERROR HANDLING - Result Type Pattern
+// ============================================
+
+export type ErrorSeverity = 'error' | 'warning' | 'critical';
+export type ErrorModule = 'repository' | 'use-case' | 'api' | 'middleware';
+
+export interface AppError {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+  module: ErrorModule;
+  method?: string;
+  severity?: ErrorSeverity;
+}
+
+export type Result<T, E = AppError> =
+  | { success: true; data: T }
+  | { success: false; error: E };
 ```
 
 ### Formato de Datos: Dominio vs Admin
@@ -290,10 +471,40 @@ getSupabaseAnonClient()   // usa NEXT_PUBLIC_SUPABASE_ANON_KEY
 | `clientes` | id (uuid) | empresa_id | telefono único |
 | `pedidos` | id (uuid) | empresa_id, cliente_id → clientes | detalle_pedido (JSON array de PedidoItem) |
 | `promociones` | id (uuid) | empresa_id → empresas | imagen_url, numero_envios |
+| `log_errors` | id (uuid) | empresa_id → empresas | Logging centralizado de errores |
 
 **Notas críticas:**
 - Tabla `pedidos` NO tiene columna `telefono` — el teléfono está en `clientes`
 - `detalle_pedido[].complementos` almacena objetos `{ name, price }` — usar tipo `PedidoComplemento`
+
+### Tabla log_errors
+
+Tabla para logging centralizado de errores:
+
+```sql
+CREATE TABLE log_errors (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  empresa_id UUID REFERENCES empresas(id) ON DELETE SET NULL,
+  codigo VARCHAR(50) NOT NULL,
+  mensaje TEXT NOT NULL,
+  modulo VARCHAR(20) NOT NULL,
+  metodo VARCHAR(100),
+  stack_trace TEXT,
+  request_path VARCHAR(500),
+  request_method VARCHAR(10),
+  user_id UUID,
+  metadata JSONB DEFAULT '{}',
+  severity VARCHAR(20) DEFAULT 'error',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**Índices:**
+- `idx_log_errors_empresa` - por empresa_id
+- `idx_log_errors_fecha` - por created_at DESC
+- `idx_log_errors_codigo` - por código
+- `idx_log_errors_modulo` - por módulo
+- `idx_log_errors_severity` - por severidad
 
 ## Errores Comunes a Evitar
 
@@ -307,18 +518,22 @@ getSupabaseAnonClient()   // usa NEXT_PUBLIC_SUPABASE_ANON_KEY
 8. **Subdominios** — buscar por `dominio` principal
 9. **Imágenes R2** — usar cliente singleton, no crear nuevos clientes
 10. **Colores** — validar formato `#RRGGBB` con regex
+11. **NO usar throw new Error en repositories** — usar `Result<T>` y logger
+12. **NO usar UUID inválido para empresaId en logging** — el logger valida UUID automáticamente
 
 ## Buenas Prácticas (OBLIGATORIAS)
 
 - ✅ Usar `getSupabaseClient()` / `getSupabaseAnonClient()` según el caso
 - ✅ Zod `safeParse` en **TODAS** las API routes
-- ✅ Usar helpers: `requireAuth`, `successResponse`, `errorResponse`, `validationErrorResponse`
+- ✅ Usar helpers: `requireAuth`, `successResponse`, `errorResponse`, `validationErrorResponse`, `handleResult`
 - ✅ Repositorios inyectados via constructor
 - ✅ Labels con `htmlFor` para accessibility
 - ✅ Props `Readonly<>` en interfaces de componentes
 - ✅ `<Image>` de Next.js para imágenes
 - ✅ `<Link>` de Next.js para navegación
 - ✅ Tipos de dominio en vez de `any` (`Product`, `Category`, `PedidoItem`, etc.)
+- ✅ Usar `Result<T>` en repositories y use cases para manejo de errores
+- ✅ Usar `logger.logAndReturnError()` o `logger.logFromCatch()` para registrar errores
 
 ## Cosas importantes para el agente
 

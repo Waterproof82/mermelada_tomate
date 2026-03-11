@@ -18,8 +18,11 @@ export default async function ConfiguracionPage() {
     return <div>No autorizado</div>;
   }
 
-  const empresaData = await empresaUseCase.getById(admin.empresa.id);
-
+  const empresaResult = await empresaUseCase.getById(admin.empresa.id);
+  
+  // Handle error case - use defaults
+  const empresaData = empresaResult.success ? empresaResult.data : null;
+  
   const empresaDatos = {
     email_notification: empresaData?.emailNotification || '',
     telefono_whatsapp: empresaData?.telefonoWhatsapp || '',

@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { authAdminUseCase } from '@/core/infrastructure/database';
 import { getMenuUseCase } from '@/lib/server-services';
+import type { MenuCategoryVM } from '@/core/application/dtos/menu-view-model';
 
 export default async function AdminDashboard() {
   const cookieStore = await cookies();
@@ -16,8 +17,26 @@ export default async function AdminDashboard() {
     return <div>No autorizado</div>;
   }
 
-  const menu = await getMenuUseCase.execute(admin.empresaId);
+  const menuResult = await getMenuUseCase.execute(admin.empresaId);
+  
+  // Handle error case
+  if (menuResult.error || !menuResult.data) {
+    return (
+      <div className="pt-20 lg:pt-0 px-6 lg:px-8">
+        <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-white mb-2">
+          Dashboard
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          Gestionando: <strong>{admin.empresa.nombre}</strong>
+        </p>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-600 dark:text-red-400">Error al cargar el menú: {menuResult.error}</p>
+        </div>
+      </div>
+    );
+  }
 
+  const menu: MenuCategoryVM[] = menuResult.data;
   const totalProductos = menu.reduce((sum, cat) => sum + cat.items.length, 0);
   const totalCategorias = menu.length;
   const productosEspeciales = menu.reduce(
