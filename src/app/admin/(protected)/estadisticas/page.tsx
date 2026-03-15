@@ -18,6 +18,8 @@ interface Stats {
 
 const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
+const CHART_COLORS = ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'] as const;
+
 export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: number }>) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,138 +106,39 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <motion.div
-          key={`kpi-1-${mountKey}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="bg-card rounded-lg shadow-sm border border-border p-6"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-muted rounded-lg">
-              <ShoppingCart className="w-5 h-5 text-foreground" />
+        {[
+          { icon: ShoppingCart, label: 'Pedidos hoy', value: stats?.pedidosHoy || 0, iconClass: 'bg-muted', iconColor: 'text-foreground' },
+          { icon: BarChart3, label: 'Pedidos mes', value: stats?.pedidosMes || 0, iconClass: 'bg-primary/10', iconColor: 'text-primary' },
+          { icon: Euro, label: 'Ventas hoy', value: `${(stats?.totalHoy || 0).toFixed(2)}€`, iconClass: 'bg-primary/10', iconColor: 'text-primary' },
+          { icon: BarChart3, label: 'Ventas mes', value: `${(stats?.totalMes || 0).toFixed(2)}€`, iconClass: 'bg-muted', iconColor: 'text-foreground' },
+          { icon: TrendingUp, label: 'Ventas año', value: `${(stats?.totalAno || 0).toFixed(2)}€`, iconClass: 'bg-secondary', iconColor: 'text-secondary-foreground' },
+        ].map((kpi, i) => (
+          <motion.div
+            key={`kpi-${i}-${mountKey}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: i * 0.05 }}
+            className="bg-card rounded-lg shadow-sm border border-border p-6"
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2 ${kpi.iconClass} rounded-lg`}>
+                <kpi.icon className={`w-5 h-5 ${kpi.iconColor}`} />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">{kpi.label}</p>
+                <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pedidos hoy</p>
-              <motion.p 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, duration: 0.3 }}
-                className="text-2xl font-bold text-foreground"
-              >
-                {stats?.pedidosHoy || 0}
-              </motion.p>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          key={`kpi-2-${mountKey}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="bg-card rounded-lg shadow-sm border border-border p-6"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <BarChart3 className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pedidos mes</p>
-              <motion.p 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.3, duration: 0.3 }}
-                className="text-2xl font-bold text-foreground"
-              >
-                {stats?.pedidosMes || 0}
-              </motion.p>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          key={`kpi-3-${mountKey}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-          className="bg-card rounded-lg shadow-sm border border-border p-6"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Euro className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Ventas hoy</p>
-              <motion.p 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.4, duration: 0.3 }}
-                className="text-2xl font-bold text-foreground"
-              >
-                {(stats?.totalHoy || 0).toFixed(2)}€
-              </motion.p>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          key={`kpi-4-${mountKey}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="bg-card rounded-lg shadow-sm border border-border p-6"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-muted rounded-lg">
-              <BarChart3 className="w-5 h-5 text-foreground" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Ventas mes</p>
-              <motion.p 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.5, duration: 0.3 }}
-                className="text-2xl font-bold text-foreground"
-              >
-                {(stats?.totalMes || 0).toFixed(2)}€
-              </motion.p>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          key={`kpi-5-${mountKey}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.35 }}
-          className="bg-card rounded-lg shadow-sm border border-border p-6"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-secondary rounded-lg">
-              <TrendingUp className="w-5 h-5 text-secondary-foreground" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Ventas año</p>
-              <motion.p 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.6, duration: 0.3 }}
-                className="text-2xl font-bold text-foreground"
-              >
-                {(stats?.totalAno || 0).toFixed(2)}€
-              </motion.p>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div 
+        <motion.div
           key={`chart-bar-${mountKey}`}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
+          transition={{ duration: 0.3, delay: 0.25 }}
           className="bg-card rounded-xl shadow-sm border border-border p-6"
         >
           <h2 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
@@ -264,11 +167,11 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
                       color: 'var(--foreground)'
                     }}
                   />
-                  <Bar dataKey="cantidad" radius={[0, 4, 4, 0]} animationDuration={1500}>
+                  <Bar dataKey="cantidad" radius={[0, 4, 4, 0]} animationDuration={800}>
                     {stats.topPlatos.slice(0, 8).map((plato, index) => (
                       <Cell 
                         key={`${plato.nombre}-bar`} 
-                        fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8]} 
+                        fill={CHART_COLORS[index % CHART_COLORS.length]} 
                       />
                     ))}
                   </Bar>
@@ -282,11 +185,11 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
           )}
         </motion.div>
 
-        <motion.div 
+        <motion.div
           key={`chart-pie-${mountKey}`}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
           className="bg-card rounded-xl shadow-sm border border-border p-6"
         >
           <h2 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
@@ -308,12 +211,12 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
                       paddingAngle={2}
                       dataKey="total"
                       nameKey="nombre"
-                      animationDuration={1500}
+                      animationDuration={800}
                     >
                       {stats.topPlatos.slice(0, 8).map((plato, index) => (
                         <Cell 
                           key={`${plato.nombre}-pie`} 
-                          fill={['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F43F5E', '#84CC16'][index % 8]} 
+                          fill={CHART_COLORS[index % CHART_COLORS.length]} 
                         />
                       ))}
                     </Pie>
@@ -334,7 +237,7 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
                   <div key={plato.nombre} className="flex items-center gap-2 text-sm">
                     <div 
                       className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6'][index % 6] }}
+                      style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
                     />
                     <span className="truncate text-muted-foreground">{plato.nombre}</span>
                   </div>

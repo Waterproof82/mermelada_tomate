@@ -25,6 +25,12 @@ function deriveDarkColors(light: EmpresaColores): EmpresaColores {
   };
 }
 
+const HEX_COLOR_RE = /^#[\da-f]{6}$/i;
+
+function isValidHex(value: string): boolean {
+  return HEX_COLOR_RE.test(value);
+}
+
 /**
  * Applies tenant brand colors to CSS custom properties.
  * In dark mode, automatically derives an inverted palette from the tenant's light colors.
@@ -79,6 +85,7 @@ export function EmpresaThemeProvider({ children, colores }: EmpresaThemeProvider
 
     // Set both raw vars and Tailwind v4 --color-* mappings
     for (const [prop, value] of Object.entries(tokenMap)) {
+      if (!isValidHex(value)) continue;
       root.style.setProperty(prop, value);
       root.style.setProperty(`--color-${prop.slice(2)}`, value);
     }

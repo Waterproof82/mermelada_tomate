@@ -75,7 +75,7 @@ export const MenuSection = memo(function MenuSection(props: Readonly<MenuSection
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.35, delay: index * 0.06 }}
+              transition={{ duration: 0.35, delay: Math.min(index * 0.06, 0.3) }}
               className="h-full"
             >
               <MenuItemCard
@@ -128,7 +128,7 @@ const SubcategorySection = memo(function SubcategorySection(props: Readonly<{
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.35, delay: index * 0.06 }}
+            transition={{ duration: 0.35, delay: Math.min(index * 0.06, 0.3) }}
             className="h-full"
           >
             <MenuItemCard
@@ -169,6 +169,15 @@ const MenuItemCard = memo(function MenuItemCard(props: Readonly<{
       } ${
         item.highlight ? "border-primary/25 ring-1 ring-primary/10" : "border-border"
       }`}
+      role={showCart ? "button" : undefined}
+      tabIndex={showCart ? 0 : undefined}
+      onKeyDown={showCart ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onItemClick(item);
+        }
+      } : undefined}
+      onClick={showCart ? () => onItemClick(item) : undefined}
     >
       {item.image && !imageError && (
         <div className="relative aspect-[16/10] w-full overflow-hidden">
@@ -180,7 +189,7 @@ const MenuItemCard = memo(function MenuItemCard(props: Readonly<{
             unoptimized
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            loading="eager"
+            loading="lazy"
             onError={() => setImageError(true)}
             suppressHydrationWarning
           />

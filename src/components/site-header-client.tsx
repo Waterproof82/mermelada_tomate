@@ -53,7 +53,7 @@ export function SiteHeaderClient({ showCart, empresa }: SiteHeaderClientProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:h-20 md:px-6">
-        <button type="button" onClick={scrollToFirstCategory} className="flex items-center gap-2 cursor-pointer">
+        <button type="button" onClick={scrollToFirstCategory} className="flex items-center gap-2 cursor-pointer" aria-label={t("scrollToMenu", language)}>
           {logoUrl && (
             <div className="relative h-12 w-24 md:h-16 md:w-32">
               <Image
@@ -81,7 +81,7 @@ export function SiteHeaderClient({ showCart, empresa }: SiteHeaderClientProps) {
               {totalItems > 0 && (
                 <span
                   key={totalItems}
-                  className={`absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground ${animate ? 'animate-bounce-long' : ''}`}
+                  className={`absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground ${animate ? 'animate-badge-pop' : ''}`}
                 >
                   {totalItems}
                 </span>

@@ -101,17 +101,19 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
               <Label className="text-sm font-medium">
                 {item.requiresComplement ? t("complementsRequired", language) : t("complementsOptional", language)}
               </Label>
-              <div className="space-y-2">
+              <div className="space-y-2" role="radiogroup" aria-label={item.requiresComplement ? t("complementsRequired", language) : t("complementsOptional", language)}>
                 {complements.map((complement) => {
                   const isSelected = selectedComplement?.id === complement.id;
                   return (
                     <button
                       key={complement.id}
                       type="button"
+                      role="radio"
+                      aria-checked={isSelected}
                       onClick={() => toggleComplement(complement)}
                       className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                        isSelected 
-                          ? 'border-primary bg-primary/10' 
+                        isSelected
+                          ? 'border-primary bg-primary/10'
                           : 'border-border hover:border-border/80'
                       }`}
                     >
@@ -162,7 +164,8 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
                 value={quantity}
                 className="mx-1 h-10 w-12 flex items-center justify-center text-center text-lg font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 readOnly
-                tabIndex={-1}
+                aria-live="polite"
+                aria-label={t("quantity", language)}
               />
               <Button variant="outline" size="icon" className="h-10 w-10" onClick={handleIncrement}>
                 <Plus className="h-4 w-4" />

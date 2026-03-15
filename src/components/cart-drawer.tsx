@@ -249,13 +249,13 @@ export function CartDrawer() {
         ) : (
           <>
             <div className="flex-1 overflow-y-auto">
-              <div className="flex flex-col gap-3 py-4">
+              <ul className="flex flex-col gap-3 py-4">
                 {items.map((ci) => {
                   const itemKey = getItemKey(ci.item, ci.selectedComplements);
                   const complementPrice = ci.selectedComplements?.reduce((sum, c) => sum + c.price, 0) || 0;
                   const totalItemPrice = ci.item.price + complementPrice;
                   return (
-                    <div key={itemKey} className="flex items-center gap-3 rounded-lg bg-card p-3">
+                    <li key={itemKey} className="flex items-center gap-3 rounded-lg bg-card p-3">
                       <div className="flex-1">
                         <p className="font-semibold text-card-foreground">
                           {(language !== "es" && ci.item.translations?.[language]?.name) || ci.item.name}
@@ -300,10 +300,10 @@ export function CartDrawer() {
                           <Trash2 className="size-3" />
                         </Button>
                       </div>
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             </div>
 
             <div className="border-t border-border pt-4 pb-6 px-2 bg-background/80 shadow-elegant rounded-b-xl">
@@ -364,7 +364,7 @@ export function CartDrawer() {
 
               <div className="flex flex-col gap-2 px-1">
                 <Button 
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full py-3 text-lg font-semibold shadow-md transition-all duration-200"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full py-3 text-lg font-semibold shadow-md transition-colors duration-200"
                   size="lg"
                   onClick={() => { closeCart(); handleConfirmOrder(); }}
                   disabled={sending || confirming}
@@ -374,7 +374,7 @@ export function CartDrawer() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground rounded-full py-2 font-medium hover:bg-muted/40 transition-all duration-200"
+                  className="text-muted-foreground rounded-full py-2 font-medium hover:bg-muted/40 transition-colors duration-200"
                   onClick={clearCart}
                 >
                   {t("clearCart", language)}

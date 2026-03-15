@@ -162,6 +162,7 @@ export default function PedidosPage() {
               placeholder="Buscar por número, cliente o teléfono..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Buscar pedidos"
               className="w-full pl-10 pr-4 py-2 border rounded-lg bg-card border-border text-foreground"
             />
           </div>
@@ -241,8 +242,8 @@ export default function PedidosPage() {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <button
                           onClick={(e) => { e.stopPropagation(); deletePedido(pedido.id); }}
-                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded"
-                          title="Eliminar pedido"
+                          className="p-2.5 text-destructive hover:bg-destructive/10 rounded"
+                          aria-label="Eliminar pedido"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

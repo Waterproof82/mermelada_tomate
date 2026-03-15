@@ -62,7 +62,7 @@ export default function LoginForm({ empresaNombre }: LoginFormProps) {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-md text-sm">
+            <div id="login-error" role="alert" className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-md text-sm">
               {error}
             </div>
           )}
@@ -77,6 +77,8 @@ export default function LoginForm({ empresaNombre }: LoginFormProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              aria-invalid={!!error}
+              aria-describedby={error ? "login-error" : undefined}
               className="mt-1 block w-full px-3 py-2 bg-card border border-border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-foreground"
               placeholder="admin@tuempresa.com"
             />
@@ -92,6 +94,8 @@ export default function LoginForm({ empresaNombre }: LoginFormProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              aria-invalid={!!error}
+              aria-describedby={error ? "login-error" : undefined}
               className="mt-1 block w-full px-3 py-2 bg-card border border-border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-foreground"
               placeholder="••••••••"
             />
