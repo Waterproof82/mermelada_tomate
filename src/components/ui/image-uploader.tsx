@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import Image from 'next/image';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Pencil, Trash2 } from 'lucide-react';
 
 interface ImageUploaderProps {
   readonly value: string;
@@ -173,7 +173,7 @@ export function ImageUploader({
             className="object-cover"
             unoptimized
           />
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+          <div className="absolute inset-0 bg-black/50 opacity-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-2">
             <button
               type="button"
               onClick={handleClick}
@@ -187,6 +187,24 @@ export function ImageUploader({
               className="px-3 py-1.5 bg-destructive text-destructive-foreground rounded-md text-sm hover:bg-destructive/90"
             >
               Eliminar
+            </button>
+          </div>
+          <div className="md:hidden absolute bottom-2 right-2 flex gap-2">
+            <button
+              type="button"
+              onClick={handleClick}
+              className="p-2 bg-card/90 backdrop-blur-sm rounded-full shadow-md"
+              aria-label="Cambiar imagen"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="p-2 bg-destructive/90 backdrop-blur-sm rounded-full shadow-md"
+              aria-label="Eliminar imagen"
+            >
+              <Trash2 className="w-4 h-4 text-white" />
             </button>
           </div>
         </div>

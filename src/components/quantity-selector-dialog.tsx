@@ -152,7 +152,7 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
               <Button
                 variant="outline"
                 size="icon"
-                className="h-10 w-10"
+                className="h-11 w-11 md:h-10 md:w-10"
                 onClick={handleDecrement}
                 disabled={quantity <= 1}
               >
@@ -167,7 +167,7 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
                 aria-live="polite"
                 aria-label={t("quantity", language)}
               />
-              <Button variant="outline" size="icon" className="h-10 w-10" onClick={handleIncrement}>
+              <Button variant="outline" size="icon" className="h-11 w-11 md:h-10 md:w-10" onClick={handleIncrement}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>

@@ -160,7 +160,7 @@ export function CartDrawer() {
       }
     } catch (err) {
       console.error('Error:', err);
-      setErrors({ nombre: t("validationOrderError", language) });
+      setErrors({ nombre: "Error de conexión. Por favor, inténtalo de nuevo." });
     } finally {
       setSending(false);
     }
@@ -273,34 +273,34 @@ export function CartDrawer() {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 md:gap-2">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="size-7 bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          className="md:size-7 size-10 bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           onClick={() => updateQuantity(itemKey, ci.quantity - 1)}
                           aria-label={t("reduceQuantity", language)}
                         >
-                          <Minus className="size-3" />
+                          <Minus className="md:size-3 size-4" />
                         </Button>
-                        <span className="w-6 text-center font-semibold text-foreground">{ci.quantity}</span>
+                        <span className="w-6 md:w-6 text-center font-semibold text-foreground">{ci.quantity}</span>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="size-7 bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          className="md:size-7 size-10 bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           onClick={() => updateQuantity(itemKey, ci.quantity + 1)}
                           aria-label={t("increaseQuantity", language)}
                         >
-                          <Plus className="size-3" />
+                          <Plus className="md:size-3 size-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-7 text-destructive hover:text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          className="md:size-7 size-10 text-destructive hover:text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           onClick={() => removeItem(itemKey)}
                           aria-label={`${t("remove", language)} ${(language !== "es" && ci.item.translations?.[language]?.name) || ci.item.name}`}
                         >
-                          <Trash2 className="size-3" />
+                          <Trash2 className="md:size-3 size-4" />
                         </Button>
                       </div>
                     </li>

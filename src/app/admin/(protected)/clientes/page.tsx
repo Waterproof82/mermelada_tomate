@@ -18,6 +18,7 @@ interface Cliente {
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [creatingCliente, setCreatingCliente] = useState(false);
@@ -27,13 +28,17 @@ export default function ClientesPage() {
   useEffect(() => {
     async function fetchClientes() {
       try {
+        setError(null);
         const res = await fetch('/api/admin/clientes');
         if (res.ok) {
           const data = await res.json();
           setClientes(data.clientes || []);
+        } else {
+          setError('Error al cargar clientes. Por favor, inténtalo de nuevo.');
         }
       } catch (error) {
         console.error('Error fetching clientes:', error);
+        setError('Error de conexión. Verifica tu conexión a internet.');
       } finally {
         setLoading(false);
       }
@@ -227,9 +232,28 @@ export default function ClientesPage() {
       {loading && (
         <div className="text-center py-8 text-muted-foreground">Cargando...</div>
       )}
-      {!loading && filteredClientes.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          {searchTerm ? 'No se encontraron clientes' : 'No hay clientes registrados'}
+      {error && (
+        <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <p className="text-destructive text-sm font-medium">{error}</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            onClick={() => window.location.reload()}
+          >
+            Reintentar
+          </Button>
+        </div>
+      )}
+      {!loading && !error && filteredClientes.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+          <Users className="w-12 h-12 opacity-30 mb-3" />
+          <p className="text-base font-medium text-foreground">
+            {searchTerm ? 'No se encontraron clientes' : 'No hay clientes registrados'}
+          </p>
+          <p className="text-sm mt-1">
+            {searchTerm ? 'Prueba con otros términos de búsqueda' : 'Los clientes aparecerán aquí cuando realicen pedidos'}
+          </p>
         </div>
       )}
       {!loading && filteredClientes.length > 0 && (
@@ -253,32 +277,32 @@ export default function ClientesPage() {
                   <tr key={cliente.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <User className="size-4 text-muted-foreground" />
-                        <span className="font-medium text-foreground">
+                        <User className="size-4 text-muted-foreground shrink-0" />
+                        <span className="font-medium text-foreground truncate max-w-[150px]">
                           {cliente.nombre || '-'}
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Mail className="size-4 text-muted-foreground" />
-                        <span className="text-foreground">
+                        <Mail className="size-4 text-muted-foreground shrink-0" />
+                        <span className="text-foreground truncate max-w-[180px]">
                           {cliente.email || '-'}
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Phone className="size-4 text-muted-foreground" />
-                        <span className="text-foreground">
+                        <Phone className="size-4 text-muted-foreground shrink-0" />
+                        <span className="text-foreground truncate max-w-[120px]">
                           {cliente.telefono || '-'}
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <MapPin className="size-4 text-muted-foreground" />
-                        <span className="text-foreground">
+                        <MapPin className="size-4 text-muted-foreground shrink-0" />
+                        <span className="text-foreground truncate max-w-[150px]">
                           {cliente.direccion || '-'}
                         </span>
                       </div>

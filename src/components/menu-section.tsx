@@ -202,7 +202,7 @@ const MenuItemCard = memo(function MenuItemCard(props: Readonly<{
             alt={displayName}
             fill
             unoptimized
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover transition-transform duration-300 md:group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             loading="lazy"
             onError={() => setImageError(true)}
@@ -212,7 +212,7 @@ const MenuItemCard = memo(function MenuItemCard(props: Readonly<{
       )}
       <div className="flex flex-1 flex-col p-4">
         <div className="mb-1 flex items-start justify-between gap-2">
-          <h3 className="font-serif text-lg font-semibold text-foreground leading-snug">
+          <h3 className="font-serif text-lg font-semibold text-foreground leading-snug truncate flex-1 min-w-0">
             {displayName}
           </h3>
           {item.highlight && (
@@ -222,7 +222,7 @@ const MenuItemCard = memo(function MenuItemCard(props: Readonly<{
           )}
         </div>
         {displayDescription && (
-          <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
+          <p className="mb-3 text-sm leading-relaxed text-muted-foreground line-clamp-3">
             {displayDescription}
           </p>
         )}
