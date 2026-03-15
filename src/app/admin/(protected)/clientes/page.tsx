@@ -187,22 +187,22 @@ export default function ClientesPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-white">Clientes</h1>
-              <p className="text-white/80 text-sm mt-1">Gestiona tus clientes</p>
+              <h1 className="text-2xl font-bold text-primary-foreground">Clientes</h1>
+              <p className="text-primary-foreground/80 text-sm mt-1">Gestiona tus clientes</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <Button 
               onClick={openCreateModal}
-              className="bg-white text-primary hover:bg-white/90 font-semibold"
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-semibold"
             >
               <Plus className="w-4 h-4 mr-2" />
               Nuevo Cliente
             </Button>
-            <div className="bg-white/20 rounded-lg px-6 py-4 text-center">
-              <Users className="w-8 h-8 text-white mx-auto mb-1" />
-              <span className="text-3xl font-bold text-white">{clientes.length}</span>
-              <p className="text-white/80 text-xs">Total clientes</p>
+            <div className="bg-primary-foreground/20 rounded-lg px-6 py-4 text-center">
+              <Users className="w-8 h-8 text-primary-foreground mx-auto mb-1" />
+              <span className="text-3xl font-bold text-primary-foreground">{clientes.length}</span>
+              <p className="text-primary-foreground/80 text-xs">Total clientes</p>
             </div>
           </div>
         </div>
@@ -211,13 +211,13 @@ export default function ClientesPage() {
       {/* Buscador */}
       <div className="mb-4">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar clientes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full pl-10 pr-4 py-2 border rounded-lg bg-card border-border text-foreground"
           />
         </div>
       </div>
@@ -295,11 +295,11 @@ export default function ClientesPage() {
                         <button
                           onClick={() => handleTogglePromociones(cliente)}
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            cliente.aceptar_promociones ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'
+                            cliente.aceptar_promociones ? 'bg-primary' : 'bg-muted'
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            className={`inline-block h-4 w-4 transform rounded-full bg-primary-foreground transition-transform ${
                               cliente.aceptar_promociones ? 'translate-x-6' : 'translate-x-1'
                             }`}
                           />
@@ -318,7 +318,7 @@ export default function ClientesPage() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleDeleteCliente(cliente.id)}
-                        className="p-2 hover:bg-muted rounded-lg transition-colors text-red-500 hover:text-red-600"
+                        className="p-2 hover:bg-muted rounded-lg transition-colors text-destructive hover:text-destructive/80"
                         title="Eliminar"
                       >
                         <Trash2 className="size-4" />
@@ -356,7 +356,7 @@ export default function ClientesPage() {
                   value={editForm.nombre}
                   onChange={(e) => setEditForm(prev => ({ ...prev, nombre: e.target.value }))}
                   placeholder="Nombre del cliente"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg bg-card border-border text-foreground"
                 />
               </div>
               <div>
@@ -369,7 +369,7 @@ export default function ClientesPage() {
                   value={editForm.email}
                   onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="email@ejemplo.com"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg bg-card border-border text-foreground"
                 />
               </div>
               <div>
@@ -382,7 +382,7 @@ export default function ClientesPage() {
                   value={editForm.telefono}
                   onChange={(e) => setEditForm(prev => ({ ...prev, telefono: e.target.value }))}
                   placeholder="Teléfono"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg bg-card border-border text-foreground"
                 />
               </div>
               <div>
@@ -395,7 +395,7 @@ export default function ClientesPage() {
                   value={editForm.direccion}
                   onChange={(e) => setEditForm(prev => ({ ...prev, direccion: e.target.value }))}
                   placeholder="Dirección del cliente"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg bg-card border-border text-foreground"
                 />
               </div>
             </div>
@@ -435,7 +435,7 @@ export default function ClientesPage() {
                   value={editForm.nombre}
                   onChange={(e) => setEditForm(prev => ({ ...prev, nombre: e.target.value }))}
                   placeholder="Nombre del cliente"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg bg-card border-border text-foreground"
                 />
               </div>
               <div>
@@ -448,7 +448,7 @@ export default function ClientesPage() {
                   value={editForm.email}
                   onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="email@ejemplo.com"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg bg-card border-border text-foreground"
                 />
               </div>
               <div>
@@ -461,7 +461,7 @@ export default function ClientesPage() {
                   value={editForm.telefono}
                   onChange={(e) => setEditForm(prev => ({ ...prev, telefono: e.target.value }))}
                   placeholder="Teléfono"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg bg-card border-border text-foreground"
                 />
               </div>
               <div>
@@ -474,7 +474,7 @@ export default function ClientesPage() {
                   value={editForm.direccion}
                   onChange={(e) => setEditForm(prev => ({ ...prev, direccion: e.target.value }))}
                   placeholder="Dirección del cliente"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg bg-card border-border text-foreground"
                 />
               </div>
             </div>

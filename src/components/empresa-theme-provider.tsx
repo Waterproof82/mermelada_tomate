@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState, ReactNode, useMemo } from 'react';
 import { EmpresaColores } from '@/core/domain/entities/types';
 
 interface EmpresaThemeProviderProps {
@@ -8,88 +8,88 @@ interface EmpresaThemeProviderProps {
   colores: EmpresaColores | null;
 }
 
-const darkColors: EmpresaColores = {
-  primary: '#00A855',
-  primaryForeground: '#FFFFFF',
-  secondary: '#3C2415',
-  secondaryForeground: '#F7E7CE',
-  accent: '#E83A4D',
-  accentForeground: '#FFFFFF',
-  background: '#1A1612',
-  foreground: '#FDFBF7',
-};
+/**
+ * Derives a dark palette from the tenant's light colors by swapping
+ * background ↔ foreground roles and adjusting secondary/accent brightness.
+ */
+function deriveDarkColors(light: EmpresaColores): EmpresaColores {
+  return {
+    primary: light.primaryForeground,
+    primaryForeground: light.primary,
+    secondary: light.foreground,
+    secondaryForeground: light.background,
+    accent: light.foreground,
+    accentForeground: light.background,
+    background: light.foreground,
+    foreground: light.background,
+  };
+}
 
+/**
+ * Applies tenant brand colors to CSS custom properties.
+ * In dark mode, automatically derives an inverted palette from the tenant's light colors.
+ */
 export function EmpresaThemeProvider({ children, colores }: EmpresaThemeProviderProps) {
   const [mounted, setMounted] = useState(false);
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    setIsDark(document.documentElement.classList.contains('dark') ||
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
   }, []);
 
   useEffect(() => {
-    if (!colores || !mounted) return;
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
-    const root = document.documentElement;
-    const colorsToApply = isDark ? darkColors : colores;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => setIsDark(e.matches);
+    mq.addEventListener('change', handleChange);
 
-    root.style.setProperty('--primary', colorsToApply.primary);
-    root.style.setProperty('--primary-foreground', colorsToApply.primaryForeground);
-    root.style.setProperty('--secondary', colorsToApply.secondary);
-    root.style.setProperty('--secondary-foreground', colorsToApply.secondaryForeground);
-    root.style.setProperty('--accent', colorsToApply.accent);
-    root.style.setProperty('--accent-foreground', colorsToApply.accentForeground);
-    root.style.setProperty('--background', colorsToApply.background);
-    root.style.setProperty('--foreground', colorsToApply.foreground);
-    root.style.setProperty('--ring', colorsToApply.primary);
-    root.style.setProperty('--color-primary', colorsToApply.primary);
-    root.style.setProperty('--color-primary-foreground', colorsToApply.primaryForeground);
-    root.style.setProperty('--color-secondary', colorsToApply.secondary);
-    root.style.setProperty('--color-secondary-foreground', colorsToApply.secondaryForeground);
-    root.style.setProperty('--color-accent', colorsToApply.accent);
-    root.style.setProperty('--color-accent-foreground', colorsToApply.accentForeground);
-    root.style.setProperty('--color-background', colorsToApply.background);
-    root.style.setProperty('--color-foreground', colorsToApply.foreground);
-    root.style.setProperty('--color-ring', colorsToApply.primary);
+    return () => {
+      observer.disconnect();
+      mq.removeEventListener('change', handleChange);
+    };
+  }, []);
 
-    root.style.setProperty('--sidebar-primary', colorsToApply.primary);
-    root.style.setProperty('--sidebar-primary-foreground', colorsToApply.primaryForeground);
-    root.style.setProperty('--sidebar', colorsToApply.secondary);
-    root.style.setProperty('--sidebar-foreground', colorsToApply.secondaryForeground);
-    root.style.setProperty('--sidebar-ring', colorsToApply.primary);
-
-    root.style.setProperty('--card', colorsToApply.background);
-    root.style.setProperty('--card-foreground', colorsToApply.foreground);
-    root.style.setProperty('--popover', colorsToApply.background);
-    root.style.setProperty('--popover-foreground', colorsToApply.foreground);
-    root.style.setProperty('--muted', colorsToApply.secondary);
-    root.style.setProperty('--muted-foreground', colorsToApply.secondaryForeground);
-    root.style.setProperty('--destructive', colorsToApply.accent);
-    root.style.setProperty('--destructive-foreground', colorsToApply.accentForeground);
-    root.style.setProperty('--border', colorsToApply.secondary);
-    root.style.setProperty('--input', colorsToApply.secondary);
-
-  }, [colores, isDark, mounted]);
+  const colorsToApply = useMemo(() => {
+    if (!colores) return null;
+    return isDark ? deriveDarkColors(colores) : colores;
+  }, [colores, isDark]);
 
   useEffect(() => {
-    if (!colores) return;
+    if (!colorsToApply || !mounted) return;
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsDark(e.matches);
+    const root = document.documentElement;
+
+    const tokenMap: Record<string, string> = {
+      '--primary': colorsToApply.primary,
+      '--primary-foreground': colorsToApply.primaryForeground,
+      '--secondary': colorsToApply.secondary,
+      '--secondary-foreground': colorsToApply.secondaryForeground,
+      '--accent': colorsToApply.accent,
+      '--accent-foreground': colorsToApply.accentForeground,
+      '--background': colorsToApply.background,
+      '--foreground': colorsToApply.foreground,
+      '--ring': colorsToApply.primary,
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [colores]);
+    // Set both raw vars and Tailwind v4 --color-* mappings
+    for (const [prop, value] of Object.entries(tokenMap)) {
+      root.style.setProperty(prop, value);
+      root.style.setProperty(`--color-${prop.slice(2)}`, value);
+    }
 
-  if (!mounted) {
-    return <>{children}</>;
-  }
+    return () => {
+      for (const prop of Object.keys(tokenMap)) {
+        root.style.removeProperty(prop);
+        root.style.removeProperty(`--color-${prop.slice(2)}`);
+      }
+    };
+  }, [colorsToApply, mounted]);
 
   return <>{children}</>;
 }

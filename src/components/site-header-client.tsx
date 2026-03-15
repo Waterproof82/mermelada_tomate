@@ -7,6 +7,7 @@ import { LanguageSelector } from "@/components/language-selector";
 import { t } from "@/lib/translations";
 import { useEffect, useState, useRef } from "react";
 import { useCart } from "@/lib/cart-context";
+import { useLanguage } from "@/lib/language-context";
 import type { EmpresaPublic } from "@/core/domain/entities/types";
 
 interface SiteHeaderClientProps {
@@ -16,6 +17,7 @@ interface SiteHeaderClientProps {
 
 export function SiteHeaderClient({ showCart, empresa }: SiteHeaderClientProps) {
   const { openCart, totalItems } = useCart();
+  const { language } = useLanguage();
   const [animate, setAnimate] = useState(false);
 
   const handleOpenCart = () => {
@@ -73,21 +75,19 @@ export function SiteHeaderClient({ showCart, empresa }: SiteHeaderClientProps) {
               size="icon"
               className="relative"
               onClick={handleOpenCart}
-              aria-label={t("openCart", "es")}
+              aria-label={t("openCart", language)}
             >
               <ShoppingCart className="size-5" />
               {totalItems > 0 && (
                 <span
                   key={totalItems}
-                  className={`absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-600 px-1 text-xs font-bold text-white ${animate ? 'animate-bounce-long' : ''}`}
+                  className={`absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground ${animate ? 'animate-bounce-long' : ''}`}
                 >
                   {totalItems}
                 </span>
               )}
             </Button>
-          ) : (
-            <div className="text-gray-400 text-sm"></div>
-          )}
+          ) : null}
         </div>
       </div>
     </header>

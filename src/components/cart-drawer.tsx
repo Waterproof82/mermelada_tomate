@@ -178,7 +178,7 @@ export function CartDrawer() {
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-green-600">
+            <DialogTitle className="flex items-center gap-2 text-primary">
               <span className="text-2xl">✓</span>
               {t("sendingOrder", language)}
             </DialogTitle>
@@ -186,7 +186,7 @@ export function CartDrawer() {
               {confirming ? t("sendingOrder", language) : t("whatsappCheck", language)}
             </DialogDescription>
             {confirming && companyPhone && (
-              <p className="text-xs text-red-500 mt-2 text-center">
+              <p className="text-xs text-destructive mt-2 text-center">
                 {t("whatsappFallback", language)} {companyPhone}
               </p>
             )}
@@ -211,7 +211,7 @@ export function CartDrawer() {
             </>
           )}
           {companyPhone && orderNumber && (
-            <div className="bg-black text-white p-3 rounded-lg mt-4 w-full text-center">
+            <div className="bg-foreground text-background p-3 rounded-lg mt-4 w-full text-center">
               <p className="text-xs font-medium">
                 * {t("whatsappCantSend", language)} {companyPhone} con pedido #{orderNumber}
               </p>
@@ -223,7 +223,7 @@ export function CartDrawer() {
       <Sheet open={isCartOpen} onOpenChange={closeCart}>
       <SheetContent className="flex w-full flex-col sm:max-w-md bg-background">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2 font-serif text-foreground">
+          <SheetTitle className="flex items-center gap-2 text-foreground">
             <ShoppingBag className="size-5" />
             {t("yourOrder", language)}
           </SheetTitle>
@@ -233,8 +233,8 @@ export function CartDrawer() {
         </SheetHeader>
 
         {items.length > 0 && (
-          <div className="mx-1 mb-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
-            <p className="text-sm text-amber-800 font-medium">
+          <div className="mx-1 mb-3 rounded-lg bg-secondary border border-border px-3 py-2">
+            <p className="text-sm text-secondary-foreground font-medium">
               {t("noPaymentRequired", language)}
             </p>
           </div>
@@ -306,7 +306,7 @@ export function CartDrawer() {
               </div>
             </div>
 
-            <div className="border-t border-border pt-4 pb-6 px-2 bg-background/80 shadow-[0_-2px_16px_0_rgba(0,0,0,0.04)] rounded-b-xl">
+            <div className="border-t border-border pt-4 pb-6 px-2 bg-background/80 shadow-elegant rounded-b-xl">
               <div className="space-y-3 mb-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -316,12 +316,12 @@ export function CartDrawer() {
                       placeholder={t("placeholderName", language)}
                       value={nombre}
                       onChange={(e) => { setNombre(e.target.value); setErrors(prev => ({ ...prev, nombre: undefined })); }}
-                      className={`h-9 ${errors.nombre ? 'border-red-500' : ''}`}
+                      className={`h-9 ${errors.nombre ? 'border-destructive' : ''}`}
                       maxLength={100}
                       autoComplete="name"
                     />
                   </div>
-                  {errors.nombre && <p className="text-xs text-red-500 mt-1 ml-6">{errors.nombre}</p>}
+                  {errors.nombre && <p className="text-xs text-destructive mt-1 ml-6">{errors.nombre}</p>}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -331,12 +331,12 @@ export function CartDrawer() {
                       placeholder={t("placeholderPhone", language)}
                       value={telefono}
                       onChange={(e) => { const val = e.target.value.replaceAll(/\D/g, '').slice(0, 15); setTelefono(val); setErrors(prev => ({ ...prev, telefono: undefined })); }}
-                      className={`h-9 ${errors.telefono ? 'border-red-500' : ''}`}
+                      className={`h-9 ${errors.telefono ? 'border-destructive' : ''}`}
                       maxLength={15}
                       autoComplete="tel"
                     />
                   </div>
-                  {errors.telefono && <p className="text-xs text-red-500 mt-1 ml-6">{errors.telefono}</p>}
+                  {errors.telefono && <p className="text-xs text-destructive mt-1 ml-6">{errors.telefono}</p>}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -351,13 +351,13 @@ export function CartDrawer() {
                       autoComplete="email"
                     />
                   </div>
-                  <p className="text-xs mt-1 ml-6 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 bg-clip-text text-transparent font-medium">{t("promoMessage", language)}</p>
+                  <p className="text-xs mt-1 ml-6 text-muted-foreground">{t("promoMessage", language)}</p>
                 </div>
               </div>
 
               <div className="mb-4 flex items-center justify-between px-2">
                 <span className="text-lg font-semibold text-foreground">{t("total", language)}</span>
-                <span className="font-serif text-2xl font-bold text-foreground">
+                <span className="text-2xl font-bold text-foreground tabular-nums">
                   {totalPrice.toFixed(2).replace(".", ",") + "€"}
                 </span>
               </div>

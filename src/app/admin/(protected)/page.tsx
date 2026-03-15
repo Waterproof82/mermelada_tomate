@@ -23,14 +23,14 @@ export default async function AdminDashboard() {
   if (menuResult.error || !menuResult.data) {
     return (
       <div className="pt-20 lg:pt-0 px-6 lg:px-8">
-        <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           Dashboard
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-muted-foreground mb-6">
           Gestionando: <strong>{admin.empresa.nombre}</strong>
         </p>
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-red-600 dark:text-red-400">Error al cargar el menú: {menuResult.error}</p>
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+          <p className="text-destructive">Error al cargar el menú: {menuResult.error}</p>
         </div>
       </div>
     );
@@ -46,39 +46,39 @@ export default async function AdminDashboard() {
 
   return (
     <div className="pt-20 lg:pt-0 px-6 lg:px-8">
-      <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-white mb-2">
+      <h1 className="text-2xl font-bold text-foreground mb-2">
         Dashboard
       </h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
+      <p className="text-muted-foreground mb-6">
         Gestionando: <strong>{admin.empresa.nombre}</strong>
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
-        <div className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-lg shadow-sm border dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Categorías</p>
+        <div className="bg-card p-4 lg:p-6 rounded-lg shadow-sm border border-border">
+          <p className="text-sm text-muted-foreground">Categorías</p>
           <p className="text-2xl lg:text-3xl font-bold text-primary">{totalCategorias}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-lg shadow-sm border dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Productos</p>
+        <div className="bg-card p-4 lg:p-6 rounded-lg shadow-sm border border-border">
+          <p className="text-sm text-muted-foreground">Productos</p>
           <p className="text-2xl lg:text-3xl font-bold text-primary">{totalProductos}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-lg shadow-sm border dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Productos Especiales</p>
-          <p className="text-2xl lg:text-3xl font-bold text-accent">{productosEspeciales}</p>
+        <div className="bg-card p-4 lg:p-6 rounded-lg shadow-sm border border-border">
+          <p className="text-sm text-muted-foreground">Productos Especiales</p>
+          <p className="text-2xl lg:text-3xl font-bold text-foreground">{productosEspeciales}</p>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-4 lg:p-6">
-        <h2 className="text-lg font-semibold mb-4 dark:text-white">Vista Previa del Menú</h2>
+      <div className="bg-card rounded-lg shadow-sm border border-border p-4 lg:p-6">
+        <h2 className="text-lg font-semibold mb-4 text-foreground">Vista Previa del Menú</h2>
         <div className="space-y-4">
           {menu.map((categoria) => (
-            <div key={categoria.id} className="border-b pb-4 last:border-0 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-800 dark:text-gray-200">{categoria.label}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{categoria.items.length} productos</p>
+            <div key={categoria.id} className="border-b border-border pb-4 last:border-0">
+              <h3 className="font-semibold text-foreground">{categoria.label}</h3>
+              <p className="text-sm text-muted-foreground">{categoria.items.length} productos</p>
             </div>
           ))}
           {menu.length === 0 && (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+            <p className="text-muted-foreground text-center py-8">
               No hay categorías configuradas
             </p>
           )}

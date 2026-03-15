@@ -43,32 +43,32 @@ export default function LoginForm({ empresaNombre }: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="max-w-md w-full p-8 bg-card rounded-lg shadow-lg">
         <div className="text-center mb-8">
           {empresaNombre ? (
-            <h1 className="text-2xl font-serif font-bold text-gray-900">
+            <h1 className="text-2xl font-semibold text-foreground">
               {empresaNombre}
             </h1>
           ) : (
-            <h1 className="text-2xl font-serif font-bold text-gray-900">
+            <h1 className="text-2xl font-semibold text-foreground">
               Panel de Administración
             </h1>
           )}
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             {empresaNombre ? 'Panel de Administración' : 'Inicia sesión con tu cuenta'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+            <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-md text-sm">
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-foreground">
               Email
             </label>
             <input
@@ -77,13 +77,13 @@ export default function LoginForm({ empresaNombre }: LoginFormProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-900"
+              className="mt-1 block w-full px-3 py-2 bg-card border border-border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-foreground"
               placeholder="admin@tuempresa.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="block text-sm font-medium text-foreground">
               Contraseña
             </label>
             <input
@@ -92,7 +92,7 @@ export default function LoginForm({ empresaNombre }: LoginFormProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-900"
+              className="mt-1 block w-full px-3 py-2 bg-card border border-border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-foreground"
               placeholder="••••••••"
             />
           </div>
@@ -100,7 +100,7 @@ export default function LoginForm({ empresaNombre }: LoginFormProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50"
           >
             {loading ? (
               <>

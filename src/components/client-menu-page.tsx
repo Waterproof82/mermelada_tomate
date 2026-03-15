@@ -28,7 +28,7 @@ export function MenuPage({ menuData, header, showCart = false, empresa }: Readon
           {menuData.length > 0 ? (
             <>
               <CategoryNav categories={menuData} />
-              <div className="mt-10 space-y-16 md:space-y-24">
+              <div className="mt-8 space-y-12 md:space-y-16">
                 {menuData.map((category) => (
                   <MenuSection key={category.id} category={category} showCart={showCart} />
                 ))}

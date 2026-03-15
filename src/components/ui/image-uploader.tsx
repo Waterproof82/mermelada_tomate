@@ -159,7 +159,7 @@ export function ImageUploader({
   return (
     <div className="space-y-2">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-foreground mb-1">
           {label}
         </label>
       )}
@@ -177,14 +177,14 @@ export function ImageUploader({
             <button
               type="button"
               onClick={handleClick}
-              className="px-3 py-1.5 bg-white text-gray-900 rounded-md text-sm hover:bg-gray-100"
+              className="px-3 py-1.5 bg-card text-card-foreground rounded-md text-sm hover:bg-muted"
             >
               Cambiar
             </button>
             <button
               type="button"
               onClick={handleRemove}
-              className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
+              className="px-3 py-1.5 bg-destructive text-destructive-foreground rounded-md text-sm hover:bg-destructive/90"
             >
               Eliminar
             </button>
@@ -200,7 +200,7 @@ export function ImageUploader({
           disabled={uploading}
           className={`
             border-2 border-dashed rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer transition-colors
-            ${dragOver ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
+            ${dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/40'}
             ${uploading ? 'pointer-events-none opacity-50' : ''}
           `}
           aria-label="Subir imagen"
@@ -208,15 +208,15 @@ export function ImageUploader({
           {uploading ? (
             <>
               <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              <span className="text-sm text-gray-500 mt-1">Subiendo...</span>
+              <span className="text-sm text-muted-foreground mt-1">Subiendo...</span>
             </>
           ) : (
             <>
-              <Upload className="h-8 w-8 text-gray-400" />
-              <span className="text-sm text-gray-500 mt-1">
+              <Upload className="h-8 w-8 text-muted-foreground/50" />
+              <span className="text-sm text-muted-foreground mt-1">
                 Arrastra o click para subir
               </span>
-              <span className="text-xs text-gray-400">JPEG, PNG, WEBP (max 10MB)</span>
+              <span className="text-xs text-muted-foreground/50">JPEG, PNG, WEBP (max 10MB)</span>
             </>
           )}
         </button>
@@ -231,7 +231,7 @@ export function ImageUploader({
       />
 
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       )}
     </div>
   );

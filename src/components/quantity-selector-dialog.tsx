@@ -112,21 +112,21 @@ export function QuantitySelectorDialog(props: Readonly<QuantitySelectorDialogPro
                       className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
                         isSelected 
                           ? 'border-primary bg-primary/10' 
-                          : 'border-gray-200 hover:border-gray-300 dark:border-gray-600'
+                          : 'border-border hover:border-border/80'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                           isSelected 
                             ? 'bg-primary border-primary dark:bg-primary dark:border-primary' 
-                            : 'border-gray-300 dark:border-gray-600'
+                            : 'border-muted-foreground/30'
                         }`}>
-                          {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                          {isSelected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
                         </div>
                         <div className="text-left">
                           <p className="font-medium text-sm">{complement.name}</p>
                           {complement.description && (
-                            <p className="text-xs text-gray-500">{complement.description}</p>
+                            <p className="text-xs text-muted-foreground">{complement.description}</p>
                           )}
                         </div>
                       </div>

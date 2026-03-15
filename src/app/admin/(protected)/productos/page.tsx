@@ -288,23 +288,23 @@ export default function ProductosPage() {
     <div className="pt-20 lg:pt-0 px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-white">Productos</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gestiona los productos del menú</p>
+          <h1 className="text-2xl font-bold text-foreground">Productos</h1>
+          <p className="text-muted-foreground">Gestiona los productos del menú</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar productos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+              className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
             />
           </div>
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
             Nuevo Producto
@@ -313,28 +313,28 @@ export default function ProductosPage() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-md">
+        <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-md">
           {error}
         </div>
       )}
 
       {categorias.length === 0 && (
-        <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-400 rounded-md">
+        <div className="mb-4 p-4 bg-secondary border border-border text-secondary-foreground rounded-md">
           No hay categorías creadas. Crea una primero en la sección de Categorías.
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 overflow-hidden">
+      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         {/* Desktop table */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Imagen
                 </th>
                 <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                  className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted"
                   onClick={() => handleSort('titulo_es')}
                 >
                   <div className="flex items-center gap-1">
@@ -343,7 +343,7 @@ export default function ProductosPage() {
                   </div>
                 </th>
                 <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                  className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted"
                   onClick={() => handleSort('precio')}
                 >
                   <div className="flex items-center gap-1">
@@ -352,7 +352,7 @@ export default function ProductosPage() {
                   </div>
                 </th>
                 <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                  className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted"
                   onClick={() => handleSort('categoria')}
                 >
                   <div className="flex items-center gap-1">
@@ -361,7 +361,7 @@ export default function ProductosPage() {
                   </div>
                 </th>
                 <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                  className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted"
                   onClick={() => handleSort('activo')}
                 >
                   <div className="flex items-center gap-1">
@@ -369,14 +369,14 @@ export default function ProductosPage() {
                     <SortIndicator field="activo" currentField={sortField} direction={sortDirection} />
                   </div>
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-card divide-y divide-border">
               {filteredProductos.map((prod) => (
-                <tr key={prod.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr key={prod.id} className="hover:bg-muted/50">
                   <td className="px-4 py-3 whitespace-nowrap">
                     {prod.foto_url ? (
                       <Image 
@@ -388,13 +388,13 @@ export default function ProductosPage() {
                         unoptimized
                       />
                     ) : (
-                      <div className="h-10 w-10 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                        <ImageIcon className="h-5 w-5 text-gray-400" />
+                      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
                       </div>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    <div className="text-sm font-medium text-foreground">
                       {prod.titulo_es}
                       {prod.es_especial && (
                         <span className="ml-2 px-2 py-0.5 text-xs bg-accent/10 text-accent rounded-full">
@@ -403,22 +403,22 @@ export default function ProductosPage() {
                       )}
                     </div>
                     {prod.descripcion_es && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                      <div className="text-xs text-muted-foreground truncate max-w-xs">
                         {prod.descripcion_es}
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground">
                     {prod.precio.toFixed(2)} €
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">
                     {getCategoriaNombre(prod.categoria_id)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       prod.activo 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        ? 'bg-primary/10 text-primary' 
+                        : 'bg-muted text-foreground'
                     }`}>
                       {prod.activo ? 'Activo' : 'Inactivo'}
                     </span>
@@ -432,7 +432,7 @@ export default function ProductosPage() {
                     </button>
                     <button
                       onClick={() => handleDeleteProduct(prod.id)}
-                      className="text-red-600 dark:text-red-400 hover:text-red-80"
+                      className="text-destructive hover:text-destructive/80"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -441,7 +441,7 @@ export default function ProductosPage() {
               ))}
               {filteredProductos.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
                     {searchTerm ? 'No se encontraron productos con ese criterio.' : 'No hay productos. Crea el primero.'}
                   </td>
                 </tr>
@@ -451,9 +451,9 @@ export default function ProductosPage() {
         </div>
 
         {/* Mobile cards */}
-        <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+        <div className="md:hidden divide-y divide-border">
           {filteredProductos.map((prod) => (
-            <div key={prod.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <div key={prod.id} className="p-4 hover:bg-muted/50">
               <div className="flex gap-3">
                 <div className="flex-shrink-0">
                   {prod.foto_url ? (
@@ -466,15 +466,15 @@ export default function ProductosPage() {
                       unoptimized
                     />
                   ) : (
-                    <div className="h-16 w-16 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                      <ImageIcon className="h-8 w-8 text-gray-400" />
+                    <div className="h-16 w-16 rounded-md bg-muted flex items-center justify-center">
+                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <p className="text-sm font-medium text-foreground">
                         {prod.titulo_es}
                         {prod.es_especial && (
                           <span className="ml-2 px-2 py-0.5 text-xs bg-accent/10 text-accent rounded-full">
@@ -482,7 +482,7 @@ export default function ProductosPage() {
                           </span>
                         )}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{getCategoriaNombre(prod.categoria_id)}</p>
+                      <p className="text-sm text-muted-foreground">{getCategoriaNombre(prod.categoria_id)}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -493,31 +493,31 @@ export default function ProductosPage() {
                       </button>
                       <button
                         onClick={() => handleDeleteProduct(prod.id)}
-                        className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                        className="p-1.5 text-destructive hover:bg-destructive/10 rounded"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{prod.precio.toFixed(2)} €</span>
+                    <span className="text-sm font-medium text-foreground">{prod.precio.toFixed(2)} €</span>
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       prod.activo 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-primary/10 text-primary' 
+                        : 'bg-muted text-foreground'
                     }`}>
                       {prod.activo ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
                   {prod.descripcion_es && (
-                    <p className="mt-1 text-xs text-gray-500 line-clamp-2">{prod.descripcion_es}</p>
+                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{prod.descripcion_es}</p>
                   )}
                 </div>
               </div>
             </div>
           ))}
           {filteredProductos.length === 0 && (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+            <div className="p-8 text-center text-muted-foreground">
               {searchTerm ? 'No se encontraron productos con ese criterio.' : 'No hay productos. Crea el primero.'}
             </div>
           )}
@@ -526,12 +526,12 @@ export default function ProductosPage() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
-              <h2 className="text-xl font-semibold dark:text-white">
+          <div className="bg-card rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b border-border">
+              <h2 className="text-xl font-semibold text-foreground">
                 {editingId ? 'Editar Producto' : 'Nuevo Producto'}
               </h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <button onClick={closeModal} className="text-muted-foreground hover:text-foreground">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -539,7 +539,7 @@ export default function ProductosPage() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label htmlFor="titulo_es" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  <label htmlFor="titulo_es" className="block text-sm font-medium text-foreground mb-1">
                     Nombre (Español) *
                   </label>
                   <input
@@ -548,12 +548,12 @@ export default function ProductosPage() {
                     required
                     value={formData.titulo_es}
                     onChange={(e) => setFormData({ ...formData, titulo_es: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                   />
                 </div>
 
                 <div className="col-span-2">
-                  <label htmlFor="descripcion_es" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  <label htmlFor="descripcion_es" className="block text-sm font-medium text-foreground mb-1">
                     Descripción (Español)
                   </label>
                   <textarea
@@ -561,12 +561,12 @@ export default function ProductosPage() {
                     value={formData.descripcion_es}
                     onChange={(e) => setFormData({ ...formData, descripcion_es: e.target.value })}
                     rows={2}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="precio" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  <label htmlFor="precio" className="block text-sm font-medium text-foreground mb-1">
                     Precio (€) *
                   </label>
                   <input
@@ -576,19 +576,19 @@ export default function ProductosPage() {
                     required
                     value={formData.precio}
                     onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="categoria_id" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  <label htmlFor="categoria_id" className="block text-sm font-medium text-foreground mb-1">
                     Categoría
                   </label>
                   <select
                     id="categoria_id"
                     value={formData.categoria_id}
                     onChange={(e) => setFormData({ ...formData, categoria_id: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                   >
                     <option value="">Sin categoría</option>
                     {(() => {
@@ -637,7 +637,7 @@ export default function ProductosPage() {
                   <button
                     type="button"
                     onClick={() => setShowTranslations(!showTranslations)}
-                    className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 mt-4 hover:text-primary dark:hover:text-primary"
+                    className="flex items-center gap-2 text-sm font-medium text-foreground mt-4 hover:text-primary dark:hover:text-primary"
                   >
                     {showTranslations ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     <Languages className="h-4 w-4" />
@@ -648,84 +648,84 @@ export default function ProductosPage() {
                 {showTranslations && (
                   <>
                     <div>
-                      <label htmlFor="titulo_en" className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Nombre (EN)</label>
+                      <label htmlFor="titulo_en" className="block text-sm text-muted-foreground mb-1">Nombre (EN)</label>
                       <input
                         id="titulo_en"
                         type="text"
                         value={formData.titulo_en}
                         onChange={(e) => setFormData({ ...formData, titulo_en: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                       />
                     </div>
                     <div>
-                      <label htmlFor="titulo_fr" className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Nombre (FR)</label>
+                      <label htmlFor="titulo_fr" className="block text-sm text-muted-foreground mb-1">Nombre (FR)</label>
                       <input
                         id="titulo_fr"
                         type="text"
                         value={formData.titulo_fr}
                         onChange={(e) => setFormData({ ...formData, titulo_fr: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                       />
                     </div>
                     <div>
-                      <label htmlFor="titulo_it" className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Nombre (IT)</label>
+                      <label htmlFor="titulo_it" className="block text-sm text-muted-foreground mb-1">Nombre (IT)</label>
                       <input
                         id="titulo_it"
                         type="text"
                         value={formData.titulo_it}
                         onChange={(e) => setFormData({ ...formData, titulo_it: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                       />
                     </div>
                     <div>
-                      <label htmlFor="titulo_de" className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Nombre (DE)</label>
+                      <label htmlFor="titulo_de" className="block text-sm text-muted-foreground mb-1">Nombre (DE)</label>
                       <input
                         id="titulo_de"
                         type="text"
                         value={formData.titulo_de}
                         onChange={(e) => setFormData({ ...formData, titulo_de: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                       />
                     </div>
 
                     <div className="col-span-2">
-                      <label htmlFor="descripcion_en" className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Descripción (EN)</label>
+                      <label htmlFor="descripcion_en" className="block text-sm text-muted-foreground mb-1">Descripción (EN)</label>
                       <textarea
                         id="descripcion_en"
                         value={formData.descripcion_en || ''}
                         onChange={(e) => setFormData({ ...formData, descripcion_en: e.target.value })}
                         rows={2}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                       />
                     </div>
                     <div className="col-span-2">
-                      <label htmlFor="descripcion_fr" className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Descripción (FR)</label>
+                      <label htmlFor="descripcion_fr" className="block text-sm text-muted-foreground mb-1">Descripción (FR)</label>
                       <textarea
                         id="descripcion_fr"
                         value={formData.descripcion_fr || ''}
                         onChange={(e) => setFormData({ ...formData, descripcion_fr: e.target.value })}
                         rows={2}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                       />
                     </div>
                     <div className="col-span-2">
-                      <label htmlFor="descripcion_it" className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Descripción (IT)</label>
+                      <label htmlFor="descripcion_it" className="block text-sm text-muted-foreground mb-1">Descripción (IT)</label>
                       <textarea
                         id="descripcion_it"
                         value={formData.descripcion_it || ''}
                         onChange={(e) => setFormData({ ...formData, descripcion_it: e.target.value })}
                         rows={2}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                       />
                     </div>
                     <div className="col-span-2">
-                      <label htmlFor="descripcion_de" className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Descripción (DE)</label>
+                      <label htmlFor="descripcion_de" className="block text-sm text-muted-foreground mb-1">Descripción (DE)</label>
                       <textarea
                         id="descripcion_de"
                         value={formData.descripcion_de || ''}
                         onChange={(e) => setFormData({ ...formData, descripcion_de: e.target.value })}
                         rows={2}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card border-border text-foreground"
                       />
                     </div>
                   </>
@@ -737,18 +737,18 @@ export default function ProductosPage() {
                       type="checkbox"
                       checked={formData.es_especial}
                       onChange={(e) => setFormData({ ...formData, es_especial: e.target.checked })}
-                      className="rounded border-gray-300"
+                      className="rounded border-border"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-200">Producto especial</span>
+                    <span className="text-sm text-foreground">Producto especial</span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={formData.activo}
                       onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                      className="rounded border-gray-300"
+                      className="rounded border-border"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-200">Activo</span>
+                    <span className="text-sm text-foreground">Activo</span>
                   </label>
                 </div>
               </div>
@@ -757,14 +757,14 @@ export default function ProductosPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 border rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                  className="px-4 py-2 border rounded-md hover:bg-muted/50 border-border text-foreground"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
                 >
                   {saving ? (
                     <>

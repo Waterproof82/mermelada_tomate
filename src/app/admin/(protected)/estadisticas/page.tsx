@@ -65,7 +65,7 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
   if (loading) {
     return (
       <div className="pt-20 lg:pt-0 px-6 lg:px-8 flex items-center justify-center min-h-[50vh]">
-        <div className="text-gray-500">Cargando...</div>
+        <div className="text-muted-foreground">Cargando...</div>
       </div>
     );
   }
@@ -74,31 +74,31 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
     <div className="pt-20 lg:pt-0 px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-white mb-1">
+          <h1 className="text-2xl font-bold text-foreground mb-1">
             Estadísticas
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Resumen de pedidos y facturación
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => cambiarMes(-1)}
-            className="p-2 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-lg bg-card border border-border hover:bg-muted/50 transition-colors"
           >
-            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
           </button>
-          <div className="px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 min-w-[160px] text-center">
-            <span className="font-medium text-gray-900 dark:text-white">
+          <div className="px-4 py-2 bg-card rounded-lg border border-border min-w-[160px] text-center">
+            <span className="font-medium text-foreground">
               {meses[mesActual]} {añoActual}
             </span>
           </div>
           <button
             onClick={() => cambiarMes(1)}
             disabled={esMesActual}
-            className="p-2 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 rounded-lg bg-card border border-border hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
       </div>
@@ -109,19 +109,19 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6"
+          className="bg-card rounded-lg shadow-sm border border-border p-6"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <ShoppingCart className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className="p-2 bg-muted rounded-lg">
+              <ShoppingCart className="w-5 h-5 text-foreground" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Pedidos hoy</p>
+              <p className="text-sm text-muted-foreground">Pedidos hoy</p>
               <motion.p 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.3 }}
-                className="text-2xl font-bold text-gray-900 dark:text-white"
+                className="text-2xl font-bold text-foreground"
               >
                 {stats?.pedidosHoy || 0}
               </motion.p>
@@ -134,19 +134,19 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6"
+          className="bg-card rounded-lg shadow-sm border border-border p-6"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <BarChart3 className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <BarChart3 className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Pedidos mes</p>
+              <p className="text-sm text-muted-foreground">Pedidos mes</p>
               <motion.p 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.3, duration: 0.3 }}
-                className="text-2xl font-bold text-gray-900 dark:text-white"
+                className="text-2xl font-bold text-foreground"
               >
                 {stats?.pedidosMes || 0}
               </motion.p>
@@ -159,19 +159,19 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.15 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6"
+          className="bg-card rounded-lg shadow-sm border border-border p-6"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <Euro className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Euro className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Ventas hoy</p>
+              <p className="text-sm text-muted-foreground">Ventas hoy</p>
               <motion.p 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.4, duration: 0.3 }}
-                className="text-2xl font-bold text-gray-900 dark:text-white"
+                className="text-2xl font-bold text-foreground"
               >
                 {(stats?.totalHoy || 0).toFixed(2)}€
               </motion.p>
@@ -184,19 +184,19 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6"
+          className="bg-card rounded-lg shadow-sm border border-border p-6"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <div className="p-2 bg-muted rounded-lg">
+              <BarChart3 className="w-5 h-5 text-foreground" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Ventas mes</p>
+              <p className="text-sm text-muted-foreground">Ventas mes</p>
               <motion.p 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.5, duration: 0.3 }}
-                className="text-2xl font-bold text-gray-900 dark:text-white"
+                className="text-2xl font-bold text-foreground"
               >
                 {(stats?.totalMes || 0).toFixed(2)}€
               </motion.p>
@@ -209,19 +209,19 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.35 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6"
+          className="bg-card rounded-lg shadow-sm border border-border p-6"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            <div className="p-2 bg-secondary rounded-lg">
+              <TrendingUp className="w-5 h-5 text-secondary-foreground" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Ventas año</p>
+              <p className="text-sm text-muted-foreground">Ventas año</p>
               <motion.p 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.6, duration: 0.3 }}
-                className="text-2xl font-bold text-gray-900 dark:text-white"
+                className="text-2xl font-bold text-foreground"
               >
                 {(stats?.totalAno || 0).toFixed(2)}€
               </motion.p>
@@ -236,9 +236,9 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6"
+          className="bg-card rounded-xl shadow-sm border border-border p-6"
         >
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
             Top platos (este mes)
           </h2>
@@ -257,10 +257,11 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
                     style={{ fill: 'currentColor' }}
                   />
                   <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'var(--tooltip-bg, #fff)', 
-                      border: '1px solid var(--tooltip-border, #e5e7eb)',
-                      borderRadius: '8px'
+                    contentStyle={{
+                      backgroundColor: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      color: 'var(--foreground)'
                     }}
                   />
                   <Bar dataKey="cantidad" radius={[0, 4, 4, 0]} animationDuration={1500}>
@@ -275,7 +276,7 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+            <p className="text-muted-foreground text-center py-8">
               No hay datos suficientes para mostrar estadísticas
             </p>
           )}
@@ -286,9 +287,9 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.8 }}
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6"
+          className="bg-card rounded-xl shadow-sm border border-border p-6"
         >
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
             <Euro className="w-5 h-5" />
             Ingresos por plato (este mes)
           </h2>
@@ -318,10 +319,11 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
                     </Pie>
                     <Tooltip 
                       formatter={(value: number) => `${value.toFixed(2)}€`}
-                      contentStyle={{ 
-                        backgroundColor: '#fff', 
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px'
+                      contentStyle={{
+                        backgroundColor: 'var(--card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        color: 'var(--foreground)'
                       }}
                     />
                   </PieChart>
@@ -334,13 +336,13 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
                       className="w-3 h-3 rounded-full" 
                       style={{ backgroundColor: ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6'][index % 6] }}
                     />
-                    <span className="truncate text-gray-600 dark:text-gray-300">{plato.nombre}</span>
+                    <span className="truncate text-muted-foreground">{plato.nombre}</span>
                   </div>
                 ))}
               </div>
             </>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+            <p className="text-muted-foreground text-center py-8">
               No hay datos suficientes para mostrar estadísticas
             </p>
           )}
