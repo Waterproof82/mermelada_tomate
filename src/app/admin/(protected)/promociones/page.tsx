@@ -195,21 +195,21 @@ export default function PromocionesPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header con contador */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 shadow-lg">
+      <div className="bg-primary rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-primary-foreground">Promociones</h1>
+            <h1 className="text-2xl font-semibold text-primary-foreground">Promociones</h1>
             <p className="text-primary-foreground/80 text-sm mt-1">Envía promociones a tus clientes</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-primary-foreground/20 rounded-lg px-4 py-3 text-center">
               <Users className="w-6 h-6 text-primary-foreground mx-auto mb-1" />
-              <span className="text-2xl font-bold text-primary-foreground">{clientes.length}</span>
+              <span className="text-2xl font-semibold text-primary-foreground">{clientes.length}</span>
               <p className="text-primary-foreground/80 text-xs">Total</p>
             </div>
             <div className="bg-primary-foreground/20 rounded-lg px-4 py-3 text-center">
               <Mail className="w-6 h-6 text-primary-foreground mx-auto mb-1" />
-              <span className="text-2xl font-bold text-primary-foreground">{clientesConPromociones.length}</span>
+              <span className="text-2xl font-semibold text-primary-foreground">{clientesConPromociones.length}</span>
               <p className="text-primary-foreground/80 text-xs">Para enviar</p>
             </div>
           </div>
@@ -217,7 +217,7 @@ export default function PromocionesPage() {
       </div>
 
       {/* Sección crear promoción */}
-      <div className="bg-card rounded-xl border shadow-sm p-6">
+      <div className="bg-card rounded-lg border shadow-sm p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <Send className="w-5 h-5" />
           Nueva Promoción
@@ -350,7 +350,7 @@ export default function PromocionesPage() {
 
       {/* Historial de promociones */}
       {promociones.length > 0 ? (
-        <div className="bg-card rounded-xl border shadow-sm p-6">
+        <div className="bg-card rounded-lg border shadow-sm p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5" />
             Última Promoción
@@ -386,7 +386,7 @@ export default function PromocionesPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-card rounded-xl border p-12 shadow-sm text-center">
+        <div className="bg-card rounded-lg border p-12 shadow-sm text-center">
           <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">No hay promociones guardadas</p>
         </div>

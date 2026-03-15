@@ -56,7 +56,7 @@ export function PromoToast() {
         aria-label="Cerrar"
       />
 
-      <div className="relative bg-card text-card-foreground rounded-xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-card text-card-foreground rounded-lg shadow-lg max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
         <button
           onClick={handleClose}
           className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted transition-colors"
@@ -66,9 +66,9 @@ export function PromoToast() {
 
         <div className="text-center">
           {type === 'success' ? (
-            <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
+            <CheckCircle className="w-12 h-12 text-primary mx-auto mb-4" />
           ) : (
-            <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
           )}
 
           <h3 className="text-lg font-semibold text-foreground mb-2">

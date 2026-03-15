@@ -56,15 +56,15 @@ export default async function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
         <div className="bg-card p-4 lg:p-6 rounded-lg shadow-sm border border-border">
           <p className="text-sm text-muted-foreground">Categorías</p>
-          <p className="text-2xl lg:text-3xl font-bold text-primary">{totalCategorias}</p>
+          <p className="text-2xl lg:text-3xl font-semibold text-foreground">{totalCategorias}</p>
         </div>
         <div className="bg-card p-4 lg:p-6 rounded-lg shadow-sm border border-border">
           <p className="text-sm text-muted-foreground">Productos</p>
-          <p className="text-2xl lg:text-3xl font-bold text-primary">{totalProductos}</p>
+          <p className="text-2xl lg:text-3xl font-semibold text-foreground">{totalProductos}</p>
         </div>
         <div className="bg-card p-4 lg:p-6 rounded-lg shadow-sm border border-border">
           <p className="text-sm text-muted-foreground">Productos Especiales</p>
-          <p className="text-2xl lg:text-3xl font-bold text-foreground">{productosEspeciales}</p>
+          <p className="text-2xl lg:text-3xl font-semibold text-foreground">{productosEspeciales}</p>
         </div>
       </div>
 

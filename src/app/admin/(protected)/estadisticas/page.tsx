@@ -139,7 +139,7 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.25 }}
-          className="bg-card rounded-xl shadow-sm border border-border p-6"
+          className="bg-card rounded-lg shadow-sm border border-border p-6"
         >
           <h2 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
@@ -190,7 +190,7 @@ export default function EstadisticasContent({ mountKey }: Readonly<{ mountKey: n
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
-          className="bg-card rounded-xl shadow-sm border border-border p-6"
+          className="bg-card rounded-lg shadow-sm border border-border p-6"
         >
           <h2 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
             <Euro className="w-5 h-5" />

@@ -183,11 +183,11 @@ export default function ClientesPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header con contador */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 shadow-lg">
+      <div className="bg-primary rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-primary-foreground">Clientes</h1>
+              <h1 className="text-2xl font-semibold text-primary-foreground">Clientes</h1>
               <p className="text-primary-foreground/80 text-sm mt-1">Gestiona tus clientes</p>
             </div>
           </div>
@@ -201,7 +201,7 @@ export default function ClientesPage() {
             </Button>
             <div className="bg-primary-foreground/20 rounded-lg px-6 py-4 text-center">
               <Users className="w-8 h-8 text-primary-foreground mx-auto mb-1" />
-              <span className="text-3xl font-bold text-primary-foreground">{clientes.length}</span>
+              <span className="text-2xl font-semibold text-primary-foreground">{clientes.length}</span>
               <p className="text-primary-foreground/80 text-xs">Total clientes</p>
             </div>
           </div>
@@ -336,7 +336,7 @@ export default function ClientesPage() {
       {/* Modal de edición */}
       {editingCliente && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-background rounded-xl border shadow-xl w-full max-w-md">
+          <div className="bg-background rounded-lg border shadow-lg w-full max-w-md">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-semibold">Editar Cliente</h2>
               <button
@@ -415,7 +415,7 @@ export default function ClientesPage() {
       {/* Modal de creación */}
       {creatingCliente && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-background rounded-xl border shadow-xl w-full max-w-md">
+          <div className="bg-background rounded-lg border shadow-lg w-full max-w-md">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-semibold">Nuevo Cliente</h2>
               <button

@@ -289,7 +289,7 @@ export default function PedidosPage() {
 
       {deleteConfirm.show && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-card rounded-lg shadow-xl p-6 max-w-sm mx-4">
+          <div className="bg-card rounded-lg shadow-lg p-6 max-w-sm mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-destructive/10 rounded-full">
                 <Trash2 className="w-5 h-5 text-destructive" />
