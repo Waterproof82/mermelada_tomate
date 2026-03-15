@@ -38,6 +38,12 @@ network-requests.json
 *.local
 *.sublime-workspace
 *.sublime-project
+*.stackdump
+$HOME/
+
+# PAI / Claude Code local
+PAI-SETUP.md
+.claude/settings.local.json
 
 # Lock files
 package-lock.json
